@@ -14,9 +14,9 @@ import {
   MessageSquare,
   CheckCircle2,
 } from "lucide-react";
-import AdminGuard from "../../../../components/admin/AdminGuard";
-import AdminTopbar from "../../../../components/admin/AdminTopbar";
-import { api } from "../../../../lib/api";
+import AdminGuard from "../../../components/admin/AdminGuard";
+import AdminTopbar from "../../../components/admin/AdminTopbar";
+import { api } from "../../../lib/api";
 
 export default function OrderDetailPage({ params }) {
   const { orderNumber } = use(params);
