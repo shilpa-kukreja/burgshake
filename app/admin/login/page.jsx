@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-export default function AdminLoginPage() {
+const AdminLoginPageContent=()=> {
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get("from") || "/admin/dashboard";
@@ -206,5 +206,16 @@ export default function AdminLoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+
+
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminLoginPageContent />
+    </Suspense>
   );
 }
