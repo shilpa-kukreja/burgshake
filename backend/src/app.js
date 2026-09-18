@@ -29,12 +29,13 @@ app.use(helmet());
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 app.use(cookieParser());
 
-app.use(
-  cors({
-    origin: env.CLIENT_URL.split(",").map((s) => s.trim()),
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: env.CLIENT_URL.split(",").map((s) => s.trim()),
+//     credentials: true,
+//   })
+// );
+app.use(cors());
 
 /* Rate Limiting */
 const limiter = rateLimit({
