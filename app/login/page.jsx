@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
-export default function LoginPage() {
+const LoginPageContent=()=> {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("from") || "/account";
@@ -355,5 +355,16 @@ function Field({
         />
       </div>
     </div>
+  );
+}
+
+
+
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
