@@ -116,7 +116,12 @@ app.use("/api/admin/orders", orderAdminRoutes);   // admin
 app.use("/api/blogs", blogPublicRoutes);        // public
 app.use("/api/admin/blogs", blogAdminRoutes);   // admin
 
-
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Burgshake API is running",
+  });
+});
 
 /* Error Handling - MUST BE LAST */
 app.use(notFound);
