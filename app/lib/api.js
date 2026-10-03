@@ -9,6 +9,13 @@ export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+
+export function resolveImageUrl(url) {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;   // legacy absolute URL — leave it
+  return `${API_BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
 export function setToken(token) {
   if (typeof window === "undefined") return;
   if (token) localStorage.setItem(TOKEN_KEY, token);

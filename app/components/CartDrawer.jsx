@@ -14,6 +14,7 @@ import {
 import CheckoutModal from "./CheckoutModal";
 import { useCart } from "../context/CartContext";
 import { useState } from "react";
+import {resolveImageUrl} from "../lib/api";
 
 export default function CartDrawer() {
   const {
@@ -157,7 +158,7 @@ export default function CartDrawer() {
                     {/* Thumbnail */}
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
                       <img
-                        src={item.img}
+                        src={resolveImageUrl(item.img)}
                         alt={item.name}
                         className="h-full w-full object-cover transition-transform duration-700 group-hover/item:scale-[1.06]"
                         loading="lazy"

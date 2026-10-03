@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import AdminGuard from "../../components/admin/AdminGuard";
 import AdminTopbar from "../../components/admin/AdminTopbar";
-import { api } from "../../lib/api";
+import { api, resolveImageUrl } from "../../lib/api";
 
 const BASE_TABS = [{ id: "all", label: "All" }];
 
@@ -232,7 +232,7 @@ export default function AdminMenuPage() {
                   <div className="flex items-center gap-3 lg:col-span-5">
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
                       <img
-                        src={item.img}
+                        src={resolveImageUrl(item.img)}
                         alt={item.name}
                         className="h-full w-full object-cover"
                         loading="lazy"

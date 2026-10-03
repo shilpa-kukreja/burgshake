@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { resolveImageUrl} from "../lib/api"
 import Link from "next/link";
 import {
   ShoppingBag,
@@ -223,7 +224,7 @@ export default function AccountOrders({ orders = [], loading = false }) {
                         }}
                       >
                         <img
-                          src={item.img}
+                          src={resolveImageUrl(item.img)}
                           alt=""
                           className="h-full w-full object-cover"
                           loading="lazy"
@@ -322,7 +323,7 @@ export default function AccountOrders({ orders = [], loading = false }) {
                           >
                             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
                               <img
-                                src={item.img}
+                                src={resolveImageUrl(item.img)}
                                 alt={item.name}
                                 className="h-full w-full object-cover"
                                 loading="lazy"

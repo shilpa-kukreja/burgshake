@@ -24,7 +24,7 @@ import {
   Search,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { api } from "../../lib/api";
+import { api, resolveImageUrl } from "../../lib/api";
 
 const EMPTY = {
   blogName: "",
@@ -646,7 +646,7 @@ function ImageUpload({ label, value, onChange, error, required }) {
 
       {value ? (
         <div className="group relative mt-2 aspect-[16/9] w-full max-w-md overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
-          <img src={value} alt="" className="h-full w-full object-cover" />
+          <img src={resolveImageUrl(value)} alt="" className="h-full w-full object-cover" />
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-neutral-950/60 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               type="button"

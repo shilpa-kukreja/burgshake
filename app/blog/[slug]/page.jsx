@@ -13,6 +13,7 @@ import {
   BookOpen,
   FileText
 } from "lucide-react";
+import {resolveImageUrl} from  "../../lib/api"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -218,7 +219,7 @@ export default async function BlogDetailPage({ params }) {
             <div className="lg:col-span-5">
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
                 <img
-                  src={blog.blogImg}
+                  src={resolveImageUrl(blog.blogImg)}
                   alt={blog.blogName}
                   className="h-full w-full object-cover"
                 />
@@ -409,7 +410,7 @@ export default async function BlogDetailPage({ params }) {
                     <div className="relative aspect-[16/11] overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
                       {r.blogImg ? (
                         <img
-                          src={r.blogImg}
+                          src={resolveImageUrl(r.blogImg)}
                           alt={r.blogName}
                           className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.05]"
                           loading="lazy"

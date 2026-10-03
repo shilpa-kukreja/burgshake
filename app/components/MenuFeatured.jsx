@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
-import { api } from "../lib/api";
+import { api, resolveImageUrl } from "../lib/api";
 
 /* Editorial overrides keyed by slug — optional.
    If an item has a matching entry here, its tagline/reason override
@@ -154,7 +154,7 @@ export default function MenuFeatured() {
                       className="relative block aspect-[5/4] overflow-hidden rounded-3xl bg-neutral-100"
                     >
                       <img
-                        src={item.img}
+                        src={resolveImageUrl(item.img)}
                         alt={item.name}
                         className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
                         loading="lazy"

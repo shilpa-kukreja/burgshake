@@ -14,6 +14,7 @@ import {
 import { DIETARY_META } from "../data/menuItems";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import {resolveImageUrl} from "../lib/api";
 
 const ICONS = {
   veg: Leaf,
@@ -45,7 +46,7 @@ export default function MenuCard({ item }) {
       {/* Image — now a Link */}
       <Link href={`/menu/${item.slug}`} className="relative aspect-[4/3] overflow-hidden bg-neutral-100 block">
         <img
-          src={item.img}
+          src={resolveImageUrl(item.img)}
           alt={item.name}
           className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
           loading="lazy"

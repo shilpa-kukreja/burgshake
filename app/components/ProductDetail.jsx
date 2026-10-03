@@ -28,6 +28,7 @@ import {
 import { DIETARY_META } from "../data/menuItems";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import {resolveImageUrl} from "../lib/api";
 
 const ICONS = {
   veg: Leaf,
@@ -428,7 +429,7 @@ export default function ProductDetail({ item }) {
                 {gallery.map((img, i) => (
                   <img
                     key={i}
-                    src={img}
+                    src={resolveImageUrl(img)}
                     alt={`${item.name} — view ${i + 1}`}
                     draggable={false}
                     className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ease-out ${
@@ -538,7 +539,7 @@ export default function ProductDetail({ item }) {
                       }`}
                     >
                       <img
-                        src={img}
+                        src={resolveImageUrl(img)}
                         alt=""
                         className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.08] ${
                           activeImg === i ? "" : "opacity-70 group-hover:opacity-100"

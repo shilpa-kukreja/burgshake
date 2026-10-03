@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import AdminGuard from "../../../components/admin/AdminGuard";
 import AdminTopbar from "../../../components/admin/AdminTopbar";
-import { api } from "../../../lib/api";
+import { api, resolveImageUrl } from "../../../lib/api";
 import { generateOrderReceipt } from "../../../lib/receipt";
 
 /* ── Status flow: what the "next" button does ────────── */
@@ -236,7 +236,7 @@ export default function OrderDetailPage({ params }) {
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
                           {item.img && (
                             <img
-                              src={item.img}
+                              src={resolveImageUrl(item.img)}
                               alt={item.name}
                               className="h-full w-full object-cover"
                             />

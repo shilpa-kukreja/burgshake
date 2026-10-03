@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { api } from "../lib/api";
+import { api, resolveImageUrl } from "../lib/api";
 
 /* ── Helpers ─────────────────────────────────────── */
 function formatDate(iso) {
@@ -121,7 +121,7 @@ export default function Blogs() {
                 {/* Image */}
                 <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
                   <img
-                    src={featured.img}
+                    src={resolveImageUrl(featured.img)}
                     alt={featured.title}
                     className="h-full w-full object-cover transition-transform duration-[1000ms] ease-out group-hover:scale-[1.04]"
                     loading="lazy"
@@ -189,7 +189,7 @@ export default function Blogs() {
                     >
                       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-neutral-200/70 sm:h-20 sm:w-20">
                         <img
-                          src={post.img}
+                          src={resolveImageUrl(post.img)}
                           alt={post.title}
                           className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]"
                           loading="lazy"

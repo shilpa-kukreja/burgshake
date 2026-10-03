@@ -21,7 +21,7 @@ import {
   Star,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { api } from "../../lib/api";
+import { api,resolveImageUrl } from "../../lib/api";
 
 const DIETARY_OPTIONS = [
   { id: "veg", label: "Vegetarian" },
@@ -821,7 +821,7 @@ function ImageUpload({ label, value, onChange, error, required }) {
       {value ? (
         <div className="group relative mt-2 h-40 w-40 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
           <img
-            src={value}
+            src={resolveImageUrl(value)}
             alt=""
             className="h-full w-full object-cover"
           />
@@ -931,7 +931,7 @@ function GalleryUpload({ images, onChange }) {
             className="group relative h-24 w-24 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100"
           >
             <img
-              src={url}
+              src={resolveImageUrl(url)}
               alt=""
               className="h-full w-full object-cover"
             />

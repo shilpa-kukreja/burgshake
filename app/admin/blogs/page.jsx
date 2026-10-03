@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import AdminGuard from "../../components/admin/AdminGuard";
 import AdminTopbar from "../../components/admin/AdminTopbar";
-import { api } from "../../lib/api";
+import { api, resolveImageUrl} from "../../lib/api";
 
 const STATUS_TABS = [
   { id: "all", label: "All" },
@@ -213,7 +213,7 @@ export default function AdminBlogsPage() {
                       <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
                         {blog.blogImg && (
                           <img
-                            src={blog.blogImg}
+                            src={resolveImageUrl(blog.blogImg)}
                             alt={blog.blogName}
                             className="h-full w-full object-cover"
                             loading="lazy"

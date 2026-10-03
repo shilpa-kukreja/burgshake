@@ -20,7 +20,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/WishlistContext";
 import AccountOrders from "../components/AccountOrders";
-import { api } from "../lib/api";
+import { api} from "../lib/api";
 
 const TABS = [
   { id: "orders", label: "Orders", Icon: ShoppingBag },

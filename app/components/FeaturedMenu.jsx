@@ -13,7 +13,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { DIETARY_META } from "../data/menuItems";
-import { api } from "../lib/api";
+import { api, resolveImageUrl } from "../lib/api";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 
@@ -209,7 +209,7 @@ export default function FeaturedMenu() {
                     className="relative block aspect-[4/3] overflow-hidden bg-neutral-100"
                   >
                     <img
-                      src={item.img}
+                      src={resolveImageUrl(item.img)}
                       alt={item.name}
                       className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
                       loading="lazy"

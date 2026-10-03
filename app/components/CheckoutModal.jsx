@@ -28,7 +28,7 @@ import {
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../lib/api";
+import { api, resolveImageUrl} from "../lib/api";
 import { loadRazorpayScript, getRazorpayKeyId } from "../lib/razorpay";
 import { generateOrderReceipt } from "../lib/userreceipt";
 
@@ -1223,7 +1223,7 @@ setCompletedOrder(null);
                     >
                       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
                         <img
-                          src={item.img}
+                          src={resolveImageUrl(item.img)}
                           alt={item.name}
                           className="h-full w-full object-cover"
                           loading="lazy"

@@ -13,7 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { api } from "../lib/api";
+import { api, resolveImageUrl } from "../lib/api";
 
 const PER_PAGE = 9;
 
@@ -289,7 +289,7 @@ function BlogPageContent() {
                     {/* Image */}
                     <div className="relative aspect-[16/11] overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
                       <img
-                        src={blog.img}
+                        src={resolveImageUrl(blog.img)}
                         alt={blog.title}
                         className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.05]"
                         loading="lazy"
