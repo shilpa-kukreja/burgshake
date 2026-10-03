@@ -19,27 +19,36 @@ import AdminGuard from "../../components/admin/AdminGuard";
 import AdminTopbar from "../../components/admin/AdminTopbar";
 import { api } from "../../lib/api";
 
-const CATEGORY_TABS = [
-  { id: "all", label: "All" },
-  { id: "burgers", label: "Burgers" },
-  { id: "shakes", label: "Shakes" },
-  { id: "sides", label: "Sides" },
-  { id: "beverages", label: "Beverages" },
-];
+const BASE_TABS = [{ id: "all", label: "All" }];
 
 export default function AdminMenuPage() {
   const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
   const [busyId, setBusyId] = useState(null);
 
+  /* ── Load items + categories in parallel ──────── */
   const load = async () => {
     setLoading(true);
     try {
-      const res = await api.adminListMenu({ limit: 200 });
-      setItems(res.data.items);
+      const [menuRes, catRes] = await Promise.all([
+        api.adminListMenu({ limit: 200 }),
+        api.adminListCategories().catch(() => null), // non-fatal if it fails
+      ]);
+      setItems(menuRes.data.items);
+
+      if (catRes?.data?.categories) {
+        /* Only active categories, sorted by their own sortOrder */
+        const active = catRes.data.categories
+          .filter((c) => c.isActive)
+          .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+          .map((c) => ({ id: c.slug, label: c.name }));
+        setCategories(active);
+      }
+
       setError("");
     } catch (err) {
       setError(err.message);
@@ -52,47 +61,63 @@ export default function AdminMenuPage() {
     load();
   }, []);
 
+  /* ── Build tab list: All + dynamic categories ─── */
+  const tabs = useMemo(() => {
+    const list = [...BASE_TABS, ...categories];
+    /* Add a "Hidden" tab — useful to audit unavailable items */
+    list.push({ id: "__hidden__", label: "Hidden" });
+    return list;
+  }, [categories]);
+
+  /* ── Filtering ────────────────────────────────── */
   const filtered = useMemo(() => {
     let list = items;
-    if (tab !== "all") list = list.filter((i) => i.category === tab);
+
+    if (tab === "__hidden__") {
+      list = list.filter((i) => !i.isAvailable);
+    } else if (tab !== "all") {
+      list = list.filter((i) => i.category === tab);
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
         (i) =>
           i.name.toLowerCase().includes(q) ||
-          i.id.toLowerCase().includes(q)
+          i.slug.toLowerCase().includes(q) ||
+          i.category.toLowerCase().includes(q)
       );
     }
     return list;
   }, [items, tab, search]);
 
-const handleToggle = async (fn, slug, key) => {
-  setBusyId(slug);
-  try {
-    const res = await fn(slug);
-    const newVal = res.data[key === "isAvailable" ? "isAvailable" : key];
-    setItems((prev) =>
-      prev.map((i) => (i.slug === slug ? { ...i, [key]: newVal } : i))
-    );
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    setBusyId(null);
-  }
-};
+  const handleToggle = async (fn, slug, key) => {
+    setBusyId(slug);
+    try {
+      const res = await fn(slug);
+      const newVal = res.data[key];
+      setItems((prev) =>
+        prev.map((i) => (i.slug === slug ? { ...i, [key]: newVal } : i))
+      );
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
-const handleDelete = async (item) => {
-  if (!confirm(`Delete "${item.name}"?`)) return;
-  setBusyId(item.slug);
-  try {
-    await api.adminDeleteMenu(item.slug);
-    setItems((prev) => prev.filter((i) => i.slug !== item.slug));
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    setBusyId(null);
-  }
-};
+  const handleDelete = async (item) => {
+    if (!confirm(`Delete "${item.name}"?`)) return;
+    setBusyId(item.slug);
+    try {
+      await api.adminDeleteMenu(item.slug);
+      setItems((prev) => prev.filter((i) => i.slug !== item.slug));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const handleMenuClick = () => {
     if (typeof window !== "undefined") {
@@ -121,7 +146,7 @@ const handleDelete = async (item) => {
         {/* Filters */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {CATEGORY_TABS.map((c) => (
+            {tabs.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setTab(c.id)}
@@ -141,7 +166,7 @@ const handleDelete = async (item) => {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or ID…"
+              placeholder="Search name, slug, category…"
               className="w-full rounded-full border border-neutral-200 bg-white py-2.5 pl-10 pr-9 text-[12.5px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none transition-all focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
             />
             {search && (
@@ -200,7 +225,7 @@ const handleDelete = async (item) => {
             <ul className="divide-y divide-neutral-200/70">
               {filtered.map((item) => (
                 <li
-                  key={item.id}
+                  key={item._id || item.slug}
                   className="grid grid-cols-1 gap-3 px-5 py-4 transition-colors hover:bg-brand-50/30 lg:grid-cols-12 lg:items-center"
                 >
                   {/* Item */}
@@ -258,11 +283,14 @@ const handleDelete = async (item) => {
                     </div>
                   </div>
 
-                  {/* Rating */}
+                  {/* Rating + review count */}
                   <div className="lg:col-span-1">
                     <div className="flex items-center gap-1 text-[12.5px] font-bold text-neutral-900">
                       <Star className="h-3 w-3 fill-brand-500 text-brand-500" />
                       {item.rating}
+                    </div>
+                    <div className="mt-0.5 text-[10.5px] font-medium text-neutral-400">
+                      {item.reviews || 0} reviews
                     </div>
                   </div>
 
@@ -273,11 +301,11 @@ const handleDelete = async (item) => {
                       onClick={() =>
                         handleToggle(
                           api.adminToggleAvailability,
-                          item.id,
+                          item.slug,
                           "isAvailable"
                         )
                       }
-                      busy={busyId === item.id}
+                      busy={busyId === item.slug}
                       variant={item.isAvailable ? "neutral" : "emerald"}
                     >
                       {item.isAvailable ? (
@@ -292,11 +320,11 @@ const handleDelete = async (item) => {
                       onClick={() =>
                         handleToggle(
                           api.adminToggleBestseller,
-                          item.id,
+                          item.slug,
                           "isBestseller"
                         )
                       }
-                      busy={busyId === item.id}
+                      busy={busyId === item.slug}
                       variant={item.isBestseller ? "brand" : "neutral"}
                     >
                       <Star
@@ -311,11 +339,11 @@ const handleDelete = async (item) => {
                       onClick={() =>
                         handleToggle(
                           api.adminToggleFeatured,
-                          item.id,
+                          item.slug,
                           "isFeatured"
                         )
                       }
-                      busy={busyId === item.id}
+                      busy={busyId === item.slug}
                       variant={item.isFeatured ? "brand" : "neutral"}
                     >
                       <Flame className="h-3.5 w-3.5" />
@@ -331,7 +359,7 @@ const handleDelete = async (item) => {
 
                     <button
                       onClick={() => handleDelete(item)}
-                      disabled={busyId === item.id}
+                      disabled={busyId === item.slug}
                       title="Delete"
                       className="grid h-8 w-8 place-items-center rounded-lg text-neutral-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
                     >

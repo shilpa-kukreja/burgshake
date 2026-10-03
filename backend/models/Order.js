@@ -48,6 +48,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
       unique: true,
       index: true,
+      default: () => {
+     const year = new Date().getFullYear();
+     const random = Math.floor(100000 + Math.random() * 900000); // 6 digits
+     return `BS-${year}-${random}`;
+   },
     },
 
     /* Who placed it */
@@ -135,22 +140,22 @@ const orderSchema = new mongoose.Schema(
 );
 
 /* ── Generate order number before save ────────────── */
-orderSchema.pre("save", function (next) {
-  if (!this.orderNumber) {
-    const year = new Date().getFullYear();
-    const random = Math.floor(1000 + Math.random() * 9000);
-    this.orderNumber = `BS-${year}-${random}`;
-  }
-  next();
-});
+// orderSchema.pre("save", function (next) {
+//   if (!this.orderNumber) {
+//     const year = new Date().getFullYear();
+//     const random = Math.floor(1000 + Math.random() * 9000);
+//     this.orderNumber = `BS-${year}-${random}`;
+//   }
+//   next();
+// });
 
 /* ── Push to status history on status change ──────── */
-orderSchema.pre("save", function (next) {
-  if (this.isModified("status")) {
-    this.statusHistory.push({ status: this.status, at: new Date() });
-  }
-  next();
-});
+// orderSchema.pre("save", function (next) {
+//   if (this.isModified("status")) {
+//     this.statusHistory.push({ status: this.status, at: new Date() });
+//   }
+//   next();
+// });
 
 const Order = mongoose.model("Order", orderSchema);
 export default Order;

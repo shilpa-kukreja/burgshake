@@ -1,66 +1,76 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { api } from "../lib/api";
 
-/* ─── Featured story data ────────────────────────────── */
-const FEATURED = {
-  category: "Behind the Grill",
-  title: "How we smash the perfect patty, every single time.",
-  excerpt:
-    "From the cut of beef to the temperature of the griddle — a look inside the small rituals that make every Burgshake burger taste exactly the same.",
-  date: "12 Mar 2026",
-  readTime: "6 min read",
-  author: {
-    name: "Karan Bhatia",
-    role: "Head Chef",
-    avatar: "https://i.pravatar.cc/80?img=15",
-  },
-  img: "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1400&q=80",
-};
+/* ── Helpers ─────────────────────────────────────── */
+function formatDate(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
-/* ─── Post list data ─────────────────────────────────── */
-const POSTS = [
-  {
-    no: "01",
-    category: "Shakes",
-    title: "Why Belgian chocolate makes a better shake.",
-    date: "08 Mar 2026",
-    readTime: "4 min",
-    author: {
-      name: "Nisha Rao",
-      avatar: "https://i.pravatar.cc/80?img=47",
-    },
-    img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    no: "02",
-    category: "Ingredients",
-    title: "The five local farms behind our daily produce.",
-    date: "02 Mar 2026",
-    readTime: "5 min",
-    author: {
-      name: "Dev Malhotra",
-      avatar: "https://i.pravatar.cc/80?img=59",
-    },
-    img: "https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&w=600&q=80",
-  },
-  {
-    no: "03",
-    category: "Café Life",
-    title: "Designing a takeaway café that still feels warm.",
-    date: "24 Feb 2026",
-    readTime: "3 min",
-    author: {
-      name: "Sara Khan",
-      avatar: "https://i.pravatar.cc/80?img=25",
-    },
-    img: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80",
-  },
-];
+function initials(name) {
+  if (!name) return "B";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join("");
+}
 
-/* ─── Component ──────────────────────────────────────── */
+function normalize(blog) {
+  return {
+    slug: blog.blogSlug,
+    category: blog.tags?.[0] || "Journal",
+    title: blog.blogName,
+    excerpt: blog.excerpt || "",
+    date: formatDate(blog.blogDate || blog.createdAt),
+    author: {
+      name: blog.author || "Burgshake Team",
+      initials: initials(blog.author || "Burgshake Team"),
+    },
+    img: blog.blogImg,
+  };
+}
+
 export default function Blogs() {
+  const [featured, setFeatured] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let live = true;
+    api
+      .getBlogs({ limit: 4 })
+      .then((res) => {
+        if (!live) return;
+        const list = (res.data?.blogs || []).map(normalize);
+        setFeatured(list[0] || null);
+        setPosts(list.slice(1, 4));
+      })
+      .catch(() => {
+        if (live) {
+          setFeatured(null);
+          setPosts([]);
+        }
+      })
+      .finally(() => {
+        if (live) setLoading(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  if (!loading && !featured) return null;
+
   return (
     <section className="relative overflow-hidden bg-[#FDFCFB] py-8 sm:py-10">
       {/* Background glows */}
@@ -101,156 +111,154 @@ export default function Blogs() {
         </div>
 
         {/* ── Body ───────────────────────────────────── */}
-        <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
-          {/* ── Featured story ────────────────────────── */}
-          <article className="group lg:col-span-6">
-            <Link href="/blog" className="block">
-              {/* Image — compact 16:10 */}
-              <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
-                <img
-                  src={FEATURED.img}
-                  alt={FEATURED.title}
-                  className="h-full w-full object-cover transition-transform duration-[1000ms] ease-out group-hover:scale-[1.04]"
-                  loading="lazy"
-                />
+        {loading ? (
+          <BlogsSkeleton />
+        ) : (
+          <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
+            {/* ── Featured story ───────────────────── */}
+            <article className="group lg:col-span-6">
+              <Link href={`/blog/${featured.slug}`} className="block">
+                {/* Image */}
+                <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
+                  <img
+                    src={featured.img}
+                    alt={featured.title}
+                    className="h-full w-full object-cover transition-transform duration-[1000ms] ease-out group-hover:scale-[1.04]"
+                    loading="lazy"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-brand-500/0 mix-blend-overlay transition-colors duration-500 group-hover:bg-brand-500/12" />
+                </div>
 
-                {/* Featured chip */}
-                {/* <span className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.16em] text-neutral-900 shadow-sm backdrop-blur-md">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-                  Featured
-                </span> */}
+                {/* Content */}
+                <div className="mt-5">
+                  <div className="flex items-center gap-3 text-[10.5px] font-bold uppercase tracking-[0.16em]">
+                    <span className="text-brand-600">{featured.category}</span>
+                    <span className="h-3 w-px bg-neutral-300" />
+                    <span className="text-neutral-400">{featured.date}</span>
+                  </div>
 
-                {/* Read time chip */}
-                <span className="absolute right-4 top-4 rounded-full bg-neutral-950/70 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
-                  {FEATURED.readTime}
+                  <h3 className="mt-3 font-display text-[19px] font-bold leading-[1.25] tracking-[-0.015em] text-neutral-950 transition-colors duration-300 group-hover:text-brand-600 sm:text-[21px]">
+                    {featured.title}
+                  </h3>
+
+                  {featured.excerpt && (
+                    <p className="mt-3 line-clamp-2 text-[13.5px] leading-[1.6] text-neutral-500">
+                      {featured.excerpt}
+                    </p>
+                  )}
+
+                  <div className="mt-5 flex items-center justify-between gap-4 border-t border-neutral-200/70 pt-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="grid h-8 w-8 place-items-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700 ring-1 ring-brand-200">
+                        {featured.author.initials}
+                      </div>
+                      <div className="leading-tight">
+                        <div className="text-[12px] font-bold text-neutral-900">
+                          {featured.author.name}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-[12px] font-semibold text-neutral-950">
+                      <span className="hidden border-b border-neutral-950 pb-0.5 transition-colors duration-300 group-hover:border-brand-500 group-hover:text-brand-600 sm:inline">
+                        Read
+                      </span>
+                      <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand-600" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </article>
+
+            {/* ── Post list ─────────────────────────── */}
+            <div className="lg:col-span-6">
+              <div className="flex items-center justify-between pb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-400">
+                <span>More Stories</span>
+                <span>
+                  {String(posts.length).padStart(2, "0")}{" "}
+                  {posts.length === 1 ? "post" : "posts"}
                 </span>
-
-                {/* Warm tint on hover */}
-                <div className="pointer-events-none absolute inset-0 bg-brand-500/0 mix-blend-overlay transition-colors duration-500 group-hover:bg-brand-500/12" />
               </div>
 
-              {/* Content */}
-              <div className="mt-5">
-                {/* Meta */}
-                <div className="flex items-center gap-3 text-[10.5px] font-bold uppercase tracking-[0.16em]">
-                  <span className="text-brand-600">{FEATURED.category}</span>
-                  <span className="h-3 w-px bg-neutral-300" />
-                  <span className="text-neutral-400">{FEATURED.date}</span>
-                </div>
-
-                {/* Title */}
-                <h3 className="mt-3 font-display text-[19px] font-bold leading-[1.25] tracking-[-0.015em] text-neutral-950 transition-colors duration-300 group-hover:text-brand-600 sm:text-[21px]">
-                  {FEATURED.title}
-                </h3>
-
-                {/* Excerpt */}
-                <p className="mt-3 line-clamp-2 text-[13.5px] leading-[1.6] text-neutral-500">
-                  {FEATURED.excerpt}
-                </p>
-
-                {/* Author + Read link */}
-                <div className="mt-5 flex items-center justify-between gap-4 border-t border-neutral-200/70 pt-4">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={FEATURED.author.avatar}
-                      alt={FEATURED.author.name}
-                      className="h-8 w-8 rounded-full object-cover ring-1 ring-neutral-200"
-                      loading="lazy"
-                    />
-                    <div className="leading-tight">
-                      <div className="text-[12px] font-bold text-neutral-900">
-                        {FEATURED.author.name}
-                      </div>
-                      <div className="mt-0.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
-                        {FEATURED.author.role}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-[12px] font-semibold text-neutral-950">
-                    <span className="hidden border-b border-neutral-950 pb-0.5 transition-colors duration-300 group-hover:border-brand-500 group-hover:text-brand-600 sm:inline">
-                      Read
-                    </span>
-                    <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand-600" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </article>
-
-          {/* ── Post list ─────────────────────────────── */}
-          <div className="lg:col-span-6">
-            {/* List header */}
-            <div className="flex items-center justify-between pb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-400">
-              <span>More Stories</span>
-              <span>03 posts</span>
-            </div>
-
-            <ul className="divide-y divide-neutral-200/70 border-t border-neutral-200/70">
-              {POSTS.map((post) => (
-                <li key={post.title}>
-                  <Link
-                    href="/blog"
-                    className="group flex items-center gap-4 py-4 sm:gap-5 sm:py-5"
-                  >
-                    {/* Editorial number */}
-                    {/* <span className="hidden font-display text-[10.5px] font-bold tracking-[0.18em] text-neutral-300 transition-colors duration-300 group-hover:text-brand-500 sm:block">
-                      / {post.no}
-                    </span> */}
-
-                    {/* Thumbnail — smaller square */}
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-neutral-200/70 sm:h-20 sm:w-20">
-                      <img
-                        src={post.img}
-                        alt={post.title}
-                        className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]"
-                        loading="lazy"
-                      />
-                    </div>
-
-                    {/* Content */}
-                    <div className="min-w-0 flex-1">
-                      {/* Meta */}
-                      <div className="flex items-center gap-2 text-[9.5px] font-bold uppercase tracking-[0.16em]">
-                        <span className="text-brand-600">{post.category}</span>
-                        <span className="h-2.5 w-px bg-neutral-300" />
-                        <span className="text-neutral-400">
-                          {post.readTime}
-                        </span>
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="mt-1.5 line-clamp-2 font-display text-[14px] font-bold leading-snug tracking-[-0.01em] text-neutral-950 transition-colors duration-300 group-hover:text-brand-600 sm:text-[15px]">
-                        {post.title}
-                      </h3>
-
-                      {/* Author byline */}
-                      <div className="mt-2 flex items-center gap-1.5">
+              <ul className="divide-y divide-neutral-200/70 border-t border-neutral-200/70">
+                {posts.map((post) => (
+                  <li key={post.slug}>
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      className="group flex items-center gap-4 py-4 sm:gap-5 sm:py-5"
+                    >
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-neutral-200/70 sm:h-20 sm:w-20">
                         <img
-                          src={post.author.avatar}
-                          alt={post.author.name}
-                          className="h-4 w-4 rounded-full object-cover ring-1 ring-neutral-200"
+                          src={post.img}
+                          alt={post.title}
+                          className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]"
                           loading="lazy"
                         />
-                        <span className="text-[10.5px] font-medium text-neutral-600">
-                          {post.author.name}
-                        </span>
-                        <span className="text-neutral-300">·</span>
-                        <span className="text-[10.5px] font-medium text-neutral-400">
-                          {post.date}
-                        </span>
                       </div>
-                    </div>
 
-                    {/* Arrow */}
-                    <ArrowUpRight className="h-3.5 w-3.5 shrink-0 -translate-x-1 text-neutral-300 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:text-brand-500 group-hover:opacity-100" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 text-[9.5px] font-bold uppercase tracking-[0.16em]">
+                          <span className="text-brand-600">
+                            {post.category}
+                          </span>
+                          <span className="h-2.5 w-px bg-neutral-300" />
+                          <span className="text-neutral-400">
+                            {post.date}
+                          </span>
+                        </div>
+
+                        <h3 className="mt-1.5 line-clamp-2 font-display text-[14px] font-bold leading-snug tracking-[-0.01em] text-neutral-950 transition-colors duration-300 group-hover:text-brand-600 sm:text-[15px]">
+                          {post.title}
+                        </h3>
+
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <div className="grid h-4 w-4 place-items-center rounded-full bg-brand-100 text-[7px] font-bold text-brand-700">
+                            {post.author.initials}
+                          </div>
+                          <span className="text-[10.5px] font-medium text-neutral-600">
+                            {post.author.name}
+                          </span>
+                        </div>
+                      </div>
+
+                      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 -translate-x-1 text-neutral-300 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:text-brand-500 group-hover:opacity-100" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
+  );
+}
+
+/* ── Loading skeleton ────────────────────────────── */
+function BlogsSkeleton() {
+  return (
+    <div className="mt-10 grid animate-pulse gap-10 lg:grid-cols-12 lg:gap-14">
+      <div className="lg:col-span-6">
+        <div className="aspect-[16/10] rounded-2xl bg-neutral-200/70" />
+        <div className="mt-5 space-y-3">
+          <div className="h-3 w-24 rounded bg-neutral-200" />
+          <div className="h-6 w-3/4 rounded bg-neutral-200" />
+          <div className="h-4 w-full rounded bg-neutral-100" />
+          <div className="h-4 w-5/6 rounded bg-neutral-100" />
+        </div>
+      </div>
+      <div className="space-y-5 lg:col-span-6">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-4">
+            <div className="h-20 w-20 rounded-xl bg-neutral-200" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-20 rounded bg-neutral-200" />
+              <div className="h-4 w-full rounded bg-neutral-100" />
+              <div className="h-3 w-1/3 rounded bg-neutral-100" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

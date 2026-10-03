@@ -52,14 +52,30 @@ Orderrouter.post(
       .matches(/^\d{10}$/)
       .withMessage("Phone must be 10 digits"),
     body("customer.email").trim().isEmail().withMessage("Valid email required"),
-    body("outlet")
-      .isIn(["bandra", "andheri"])
-      .withMessage("Invalid outlet"),
-    body("date").isIn(["today", "tomorrow"]).withMessage("Invalid date"),
+
+    /* Outlet: accepts "bandra" (string) OR { id: "bandra", ... } */
+    body("outlet").custom((value) => {
+      const id = typeof value === "string" ? value : value?.id;
+      if (!["bandra", "andheri"].includes(id)) {
+        throw new Error("Invalid outlet");
+      }
+      return true;
+    }),
+
+    /* Date: ISO YYYY-MM-DD (the frontend sends this) */
+    body("date")
+      .matches(/^\d{4}-\d{2}-\d{2}$/)
+      .withMessage("Invalid date format"),
+
     body("timeSlot").trim().notEmpty().withMessage("Time slot required"),
     body("payment")
       .isIn(["razorpay", "counter"])
       .withMessage("Invalid payment method"),
+
+    /* Optional fields */
+    body("timeSlotLabel").optional().isString(),
+    body("notes").optional().isString().isLength({ max: 500 }),
+    body("couponCode").optional().isString(),
   ],
   validate,
   createOrder

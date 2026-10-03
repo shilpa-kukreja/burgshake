@@ -264,10 +264,10 @@ export default function AdminDashboardPage() {
                 desc="Update statuses"
               />
               <QuickLink
-                href="/admin/contacts"
+                href="/admin/contact"
                 icon={MessageSquare}
                 title="Customer messages"
-                desc={`${data.contacts.new} new`}
+                desc="View Messages"
               />
             </div>
           </div>

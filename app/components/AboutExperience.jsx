@@ -28,73 +28,77 @@ export default function AboutExperience() {
           </h2>
         </div>
 
-        {/* Photo grid — bento style */}
-        <div className="mt-14 grid gap-4 sm:grid-cols-6 lg:grid-cols-12 lg:gap-5">
-          {/* Big image left */}
-          <div className="sm:col-span-6 lg:col-span-7">
-            <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100">
-              <img
-                src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1200&q=85"
-                alt="Warm café interior"
-                className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-neutral-950/20 to-transparent" />
+        {/* Three squares row */}
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+          {/* ── Square 1 — The Space ───────────────── */}
+          <div className="group relative aspect-square overflow-hidden rounded-3xl bg-neutral-100">
+            <img
+              src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1200&q=85"
+              alt="Warm café interior"
+              className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/25 to-transparent" />
 
-              {/* Text overlay */}
-              <div className="absolute inset-x-0 bottom-0 p-7 text-white">
-                <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-300">
-                  The Space
-                </div>
-                <h3 className="mt-2 font-display text-[18px] font-bold leading-tight tracking-[-0.01em] sm:text-[20px]">
-                  A café built for slow bites
-                </h3>
-                <p className="mt-2 max-w-md text-[12.5px] leading-[1.6] text-white/75">
-                  Warm lights, curated music, and a counter you&apos;ll want to
-                  linger at.
-                </p>
+            <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-7">
+              <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-300">
+                The Space
               </div>
+              <h3 className="mt-2 font-display text-[17px] font-bold leading-tight tracking-[-0.01em] sm:text-[19px]">
+                A café built for slow bites
+              </h3>
+              <p className="mt-2 max-w-md text-[12.5px] leading-[1.6] text-white/75">
+                Warm lights, curated music, and a counter you&apos;ll want to
+                linger at.
+              </p>
             </div>
           </div>
 
-          {/* Right column — 2 stacked images */}
-          <div className="grid gap-4 sm:col-span-6 sm:grid-cols-2 lg:col-span-5 lg:grid-cols-1 lg:gap-5">
-            {/* Small image top */}
-            <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100">
-              <img
-                src="https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&w=800&q=85"
-                alt="Chef hands at work"
-                className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/70 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-300">
-                  The Craft
-                </div>
-                <div className="mt-1 text-[13px] font-bold">
-                  Built to order, every time
-                </div>
-              </div>
-            </div>
+          {/* ── Square 2 — The Craft ───────────────── */}
+          <div className="group relative aspect-square overflow-hidden rounded-3xl bg-neutral-100">
+            <img
+              src="https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&w=900&q=85"
+              alt="Chef hands at work"
+              className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-neutral-950/20 to-transparent" />
 
-            {/* Small image bottom */}
-            <div className="group relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100">
-              <img
-                src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=85"
-                alt="Happy customers"
-                className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/70 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-300">
-                  The People
-                </div>
-                <div className="mt-1 text-[13px] font-bold">
-                  Regulars who became friends
-                </div>
+            <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-7">
+              <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-300">
+                The Craft
               </div>
+              <h3 className="mt-2 font-display text-[17px] font-bold leading-tight tracking-[-0.01em] sm:text-[19px]">
+                Built to order, every time
+              </h3>
+              <p className="mt-2 max-w-md text-[12.5px] leading-[1.6] text-white/75">
+                Nothing sits under a heat lamp. Every burger is smashed when
+                you order it.
+              </p>
+            </div>
+          </div>
+
+          {/* ── Square 3 — The People ──────────────── */}
+          <div className="group relative aspect-square overflow-hidden rounded-3xl bg-neutral-100 sm:col-span-2 lg:col-span-1">
+            <img
+              src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=85"
+              alt="Happy customers"
+              className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-neutral-950/20 to-transparent" />
+
+            <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-7">
+              <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-brand-300">
+                The People
+              </div>
+              <h3 className="mt-2 font-display text-[17px] font-bold leading-tight tracking-[-0.01em] sm:text-[19px]">
+                Regulars who became friends
+              </h3>
+              <p className="mt-2 max-w-md text-[12.5px] leading-[1.6] text-white/75">
+                Week-one faces, weekend rituals, and a counter that knows your
+                usual.
+              </p>
             </div>
           </div>
         </div>

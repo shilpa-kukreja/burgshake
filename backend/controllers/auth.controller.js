@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Otp from "../models/Otp.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import {
@@ -6,6 +7,226 @@ import {
   setAuthCookie,
   clearAuthCookie,
 } from "../utils/token.js";
+import { sendOtpSms } from "../services/sms.service.js";
+
+/* ── Helpers ─────────────────────────────────────────── */
+
+function generateOtp() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+const OTP_TTL_MS = 5 * 60 * 1000;       // 5 minutes
+const OTP_COOLDOWN_MS = 60 * 1000;      // 1 min between sends to same phone
+const OTP_MAX_ATTEMPTS = 5;
+
+/* ═══════════════════════════════════════════════════
+   POST /api/auth/send-otp
+   Public — send a 6-digit OTP to a phone
+   ═══════════════════════════════════════════════════ */
+export async function sendOtp(req, res, next) {
+  try {
+    const phone = String(req.body.phone || "").trim();
+
+    if (!/^\d{10}$/.test(phone)) {
+      throw new ApiError(400, "Phone must be 10 digits.");
+    }
+
+    /* Per-phone cooldown */
+    const existing = await Otp.findOne({ phone });
+    if (existing) {
+      const age = Date.now() - new Date(existing.createdAt).getTime();
+      if (age < OTP_COOLDOWN_MS) {
+        const wait = Math.ceil((OTP_COOLDOWN_MS - age) / 1000);
+        throw new ApiError(
+          429,
+          `Please wait ${wait}s before requesting another OTP.`
+        );
+      }
+    }
+
+    const otp = generateOtp();
+
+    /* Upsert — resets attempts and createdAt */
+    await Otp.findOneAndUpdate(
+      { phone },
+      { phone, otp, attempts: 0, createdAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    await sendOtpSms(phone, otp);
+
+    res.json(new ApiResponse(200, null, "OTP sent successfully"));
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   POST /api/auth/verify-otp
+   Public — verify OTP. Creates the user if new.
+   Body: { phone, otp, name?, email? }
+   ═══════════════════════════════════════════════════ */
+export async function verifyOtp(req, res, next) {
+  try {
+    const phone = String(req.body.phone || "").trim();
+    const otp = String(req.body.otp || "").trim();
+    const name = req.body.name ? String(req.body.name).trim() : "";
+    const email = req.body.email
+      ? String(req.body.email).trim().toLowerCase()
+      : "";
+
+    if (!/^\d{10}$/.test(phone)) {
+      throw new ApiError(400, "Phone must be 10 digits.");
+    }
+    if (!/^\d{6}$/.test(otp)) {
+      throw new ApiError(400, "OTP must be 6 digits.");
+    }
+
+    /* Look up the OTP record */
+    const record = await Otp.findOne({ phone });
+    if (!record) {
+      throw new ApiError(400, "OTP expired or not found. Request a new one.");
+    }
+
+    /* Manual age check — TTL deletion can lag by up to 60s */
+    const age = Date.now() - new Date(record.createdAt).getTime();
+    if (age > OTP_TTL_MS) {
+      await Otp.deleteOne({ _id: record._id });
+      throw new ApiError(400, "OTP expired. Request a new one.");
+    }
+
+    /* Brute-force guard */
+    if (record.attempts >= OTP_MAX_ATTEMPTS) {
+      await Otp.deleteOne({ _id: record._id });
+      throw new ApiError(
+        429,
+        "Too many wrong attempts. Request a new OTP."
+      );
+    }
+
+    /* Wrong code */
+    if (record.otp !== otp) {
+      record.attempts = (record.attempts || 0) + 1;
+      await record.save();
+      throw new ApiError(400, "Invalid OTP.");
+    }
+
+    /* Correct — burn the OTP immediately so it can't be reused */
+    await Otp.deleteOne({ _id: record._id });
+
+    /* Find or create the user */
+    let user = await User.findOne({ phone });
+    let isNewUser = false;
+
+    if (!user) {
+      if (!name || !email) {
+        throw new ApiError(
+          400,
+          "Name and email are required for new signups."
+        );
+      }
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        throw new ApiError(400, "Invalid email address.");
+      }
+
+      /* Email must be free */
+      const emailTaken = await User.findOne({ email });
+      if (emailTaken) {
+        throw new ApiError(
+          409,
+          "This email is already linked to another account."
+        );
+      }
+
+      user = await User.create({
+        name,
+        email,
+        phone,
+        role: "user",
+        verifiedAt: new Date(),
+        lastLoginAt: new Date(),
+      });
+      isNewUser = true;
+    } else {
+      if (!user.isActive) {
+        throw new ApiError(403, "Account has been deactivated.");
+      }
+      /* First-time OTP verification (e.g. pre-existing user) */
+      if (!user.verifiedAt) user.verifiedAt = new Date();
+      user.lastLoginAt = new Date();
+      await user.save();
+    }
+
+    /* Issue JWT (same shape as admin login) */
+    const token = signToken({ id: user._id, role: user.role });
+    setAuthCookie(res, token);
+
+    res.json(
+      new ApiResponse(
+        200,
+        {
+          user: user.toSafeObject(),
+          token,
+          isNewUser,
+        },
+        isNewUser
+          ? "Account created successfully"
+          : "Signed in successfully"
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   POST /api/auth/login  (ADMIN ONLY)
+   ═══════════════════════════════════════════════════ */
+export async function login(req, res, next) {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      "+password"
+    );
+    if (!user) {
+      throw new ApiError(401, "Invalid email or password.");
+    }
+
+    /* Only admins use email + password */
+    if (user.role !== "admin") {
+      throw new ApiError(
+        403,
+        "Please sign in with your phone number instead."
+      );
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      throw new ApiError(401, "Invalid email or password.");
+    }
+
+    if (!user.isActive) {
+      throw new ApiError(403, "Account has been deactivated.");
+    }
+
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    const token = signToken({ id: user._id, role: user.role });
+    setAuthCookie(res, token);
+
+    res.json(
+      new ApiResponse(
+        200,
+        { user: user.toSafeObject(), token },
+        "Signed in successfully"
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+}
 
 /* ═══════════════════════════════════════════════════
    POST /api/auth/register
@@ -44,50 +265,6 @@ export async function register(req, res, next) {
   }
 }
 
-/* ═══════════════════════════════════════════════════
-   POST /api/auth/login
-   ═══════════════════════════════════════════════════ */
-export async function login(req, res, next) {
-  try {
-    const { email, password } = req.body;
-
-    /* Find user WITH password */
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
-      "+password"
-    );
-    if (!user) {
-      throw new ApiError(401, "Invalid email or password.");
-    }
-
-    /* Verify password */
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      throw new ApiError(401, "Invalid email or password.");
-    }
-
-    if (!user.isActive) {
-      throw new ApiError(403, "Account has been deactivated.");
-    }
-
-    /* Update last login */
-    user.lastLoginAt = new Date();
-    await user.save();
-
-    /* Sign token */
-    const token = signToken({ id: user._id, role: user.role });
-    setAuthCookie(res, token);
-
-    res.json(
-      new ApiResponse(
-        200,
-        { user: user.toSafeObject(), token },
-        "Signed in successfully"
-      )
-    );
-  } catch (err) {
-    next(err);
-  }
-}
 
 /* ═══════════════════════════════════════════════════
    POST /api/auth/logout

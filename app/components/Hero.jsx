@@ -84,17 +84,19 @@ export default function Hero() {
                 className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-neutral-950 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.4)] transition-all duration-300 hover:shadow-[0_14px_40px_-10px_rgba(249,115,22,0.5)]"
               >
                 <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-brand-500 to-brand-600 transition-transform duration-500 ease-out group-hover:translate-x-0" />
-                <ShoppingBag className="relative h-4 w-4" />
-                <span className="relative">Order Now</span>
-                <ArrowRight className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                {/* <ShoppingBag className="relative h-4 w-4" /> */}
+                <UtensilsCrossed className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 " />
+
+                <span className="relative"> View Menu</span>
+
+                <ArrowRight className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
               </Link>
-              <Link
+              {/* <Link
                 href="/menu"
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3.5 text-sm font-semibold text-neutral-800 transition-all duration-300 hover:border-neutral-900 hover:bg-neutral-50"
               >
-                <UtensilsCrossed className="h-4 w-4 text-neutral-500 transition-colors group-hover:text-brand-500" />
                 View Menu
-              </Link>
+              </Link> */}
             </div>
 
             {/* Trust row (avatars + rating) */}

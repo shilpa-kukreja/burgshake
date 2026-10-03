@@ -26,6 +26,7 @@ export default function CartDrawer() {
     tax,
     total,
     count,
+    hydrated,
   } = useCart();
 
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -36,8 +37,9 @@ export default function CartDrawer() {
       <div
         onClick={closeCart}
         aria-hidden="true"
-        className={`fixed inset-0 z-[70] bg-neutral-950/45 backdrop-blur-sm transition-opacity duration-500 ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+        className={`fixed inset-0 z-[70] bg-neutral-950/45 backdrop-blur-sm transition-opacity duration-500 ${
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
       />
 
       {/* ── Drawer panel ───────────────────────────── */}
@@ -45,8 +47,9 @@ export default function CartDrawer() {
         role="dialog"
         aria-modal="true"
         aria-label="Shopping cart"
-        className={`fixed right-0 top-0 z-[80] flex h-full w-full flex-col bg-[#FDFCFB] shadow-[0_0_60px_rgba(0,0,0,0.4)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:w-[440px] lg:w-[480px] sm:rounded-l-3xl ${isOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+        className={`fixed right-0 top-0 z-[80] flex h-full w-full flex-col bg-[#FDFCFB] shadow-[0_0_60px_rgba(0,0,0,0.4)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:w-[440px] lg:w-[480px] sm:rounded-l-3xl ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
         {/* ── Warm glow decoration ─────────────────── */}
         {/* <div
@@ -64,7 +67,9 @@ export default function CartDrawer() {
               Your Order
             </div>
             <h2 className="mt-2 font-display text-[20px] font-bold leading-tight tracking-[-0.015em] text-neutral-950 sm:text-[22px]">
-              {count > 0 ? (
+              {!hydrated ? (
+                <>Your bag</>
+              ) : count > 0 ? (
                 <>
                   {count} {count === 1 ? "item" : "items"} in your bag
                 </>
@@ -133,79 +138,100 @@ export default function CartDrawer() {
           ) : (
             /* ── Item list ─────────────────────────── */
             <ul className="divide-y divide-neutral-200/70 px-6 sm:px-7">
-              {items.map((item) => (
-                <li
-                  key={item.id}
-                  className="group/item flex items-start gap-4 py-5"
-                >
-                  {/* Thumbnail */}
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
-                    <img
-                      src={item.img}
-                      alt={item.name}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover/item:scale-[1.06]"
-                      loading="lazy"
-                    />
-                  </div>
+              {items.map((item) => {
+                /* Build the customization summary line */
+                const c = item.customizations;
+                const customSummary =
+                  c &&
+                  [c.bun, c.patty, ...(c.extras || [])]
+                    .filter(Boolean)
+                    .join(" · ");
 
-                  {/* Content */}
-                  <div className="min-w-0 flex-1">
-                    {/* Name */}
-                    <h3 className="line-clamp-1 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em] text-neutral-950">
-                      {item.name}
-                    </h3>
+                return (
+                  <li
+                    key={`${item.slug}__${
+                      c ? JSON.stringify(c) : ""
+                    }`}
+                    className="group/item flex items-start gap-4 py-5"
+                  >
+                    {/* Thumbnail */}
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/70">
+                      <img
+                        src={item.img}
+                        alt={item.name}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover/item:scale-[1.06]"
+                        loading="lazy"
+                      />
+                    </div>
 
-                    {/* Unit price */}
-                    <p className="mt-1 text-[11.5px] font-medium text-neutral-400">
-                      ₹{item.price} each
-                    </p>
+                    {/* Content */}
+                    <div className="min-w-0 flex-1">
+                      {/* Name */}
+                      <h3 className="line-clamp-1 font-display text-[14.5px] font-bold leading-tight tracking-[-0.01em] text-neutral-950">
+                        {item.name}
+                      </h3>
 
-                    {/* Qty controls + total row */}
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      {/* Qty stepper */}
-                      <div className="flex items-center rounded-full border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-                        <button
-                          onClick={() =>
-                            updateQty(item.id, (item.qty || 1) - 1)
-                          }
-                          aria-label="Decrease quantity"
-                          className="grid h-7 w-7 place-items-center rounded-full text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600 active:scale-90"
-                        >
-                          <Minus className="h-3 w-3" strokeWidth={2.5} />
-                        </button>
-                        <span className="min-w-[24px] text-center text-[13px] font-bold tabular-nums text-neutral-900">
-                          {item.qty || 1}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQty(item.id, (item.qty || 1) + 1)
-                          }
-                          aria-label="Increase quantity"
-                          className="grid h-7 w-7 place-items-center rounded-full text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600 active:scale-90"
-                        >
-                          <Plus className="h-3 w-3" strokeWidth={2.5} />
-                        </button>
-                      </div>
+                      {/* Customizations (bun · patty · extras) */}
+                      {customSummary && (
+                        <p className="mt-1 line-clamp-1 text-[11px] font-medium text-neutral-500">
+                          {customSummary}
+                        </p>
+                      )}
 
-                      {/* Line total */}
-                      <div className="flex items-center gap-3">
-                        <span className="font-display text-[14px] font-bold tabular-nums text-neutral-950">
-                          ₹{item.price * (item.qty || 1)}
-                        </span>
+                      {/* Unit price */}
+                      <p className="mt-1 text-[11.5px] font-medium text-neutral-400">
+                        ₹{item.price} each
+                      </p>
 
-                        {/* Remove */}
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          aria-label={`Remove ${item.name}`}
-                          className="grid h-7 w-7 place-items-center rounded-full text-neutral-400 transition-all duration-300 hover:bg-red-50 hover:text-red-500"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                      {/* Qty controls + total row */}
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        {/* Qty stepper */}
+                        <div className="flex items-center rounded-full border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                          <button
+                            onClick={() =>
+                              updateQty(item, (item.qty || 1) - 1)
+                            }
+                            aria-label="Decrease quantity"
+                            className="grid h-7 w-7 place-items-center rounded-full text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600 active:scale-90"
+                          >
+                            <Minus className="h-3 w-3" strokeWidth={2.5} />
+                          </button>
+                          <span className="min-w-[24px] text-center text-[13px] font-bold tabular-nums text-neutral-900">
+                            {item.qty || 1}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateQty(item, (item.qty || 1) + 1)
+                            }
+                            aria-label="Increase quantity"
+                            className="grid h-7 w-7 place-items-center rounded-full text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600 active:scale-90"
+                          >
+                            <Plus className="h-3 w-3" strokeWidth={2.5} />
+                          </button>
+                        </div>
+
+                        {/* Line total */}
+                        <div className="flex items-center gap-3">
+                          <span className="font-display text-[14px] font-bold tabular-nums text-neutral-950">
+                            ₹{item.price * (item.qty || 1)}
+                          </span>
+
+                          {/* Remove */}
+                          <button
+                            onClick={() =>
+                              removeItem(item.slug, item.customizations)
+                            }
+                            aria-label={`Remove ${item.name}`}
+                            className="grid h-7 w-7 place-items-center rounded-full text-neutral-400 transition-all duration-300 hover:bg-red-50 hover:text-red-500"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -268,6 +294,7 @@ export default function CartDrawer() {
           </footer>
         )}
       </aside>
+
       <CheckoutModal
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "../lib/api";   // ← ADD THIS
+
 import {
   User,
   Mail,
@@ -33,6 +35,8 @@ export default function ContactForm() {
   const [errors, setErrors] = useState({});
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [serverError, setServerError] = useState("");   // ← ADD
+
 
   const update = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -52,19 +56,52 @@ export default function ContactForm() {
     return err;
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   const err = validate();
+  //   if (Object.keys(err).length) {
+  //     setErrors(err);
+  //     return;
+  //   }
+  //   setSending(true);
+
+  //   /* Simulate send — replace with backend/email API later */
+  //   await new Promise((r) => setTimeout(r, 1200));
+
+  //   setSending(false);
+  //   setSent(true);
+  //   setForm({
+  //     name: "",
+  //     email: "",
+  //     phone: "",
+  //     topic: "General inquiry",
+  //     message: "",
+  //   });
+  //   setTimeout(() => setSent(false), 4000);
+  // };
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const err = validate();
-    if (Object.keys(err).length) {
-      setErrors(err);
-      return;
-    }
-    setSending(true);
+  e.preventDefault();
+  setServerError("");
 
-    /* Simulate send — replace with backend/email API later */
-    await new Promise((r) => setTimeout(r, 1200));
+  const err = validate();
+  if (Object.keys(err).length) {
+    setErrors(err);
+    return;
+  }
 
-    setSending(false);
+  setSending(true);
+
+  try {
+    await api.submitContact({
+      name:    form.name.trim(),
+      email:   form.email.trim(),
+      phone:   form.phone.trim(),   // "" is fine — backend treats empty as optional
+      topic:   form.topic,
+      message: form.message.trim(),
+    });
+
     setSent(true);
     setForm({
       name: "",
@@ -73,8 +110,15 @@ export default function ContactForm() {
       topic: "General inquiry",
       message: "",
     });
+    setErrors({});
     setTimeout(() => setSent(false), 4000);
-  };
+  } catch (e) {
+    setServerError(e.message || "Couldn't send your message. Please try again.");
+  } finally {
+    setSending(false);
+  }
+};
+
 
   return (
     <section className="relative overflow-hidden bg-[#FDFCFB] py-10 sm:py-12">
@@ -234,6 +278,13 @@ export default function ContactForm() {
                     </div>
                   </div>
                 )}
+
+                {serverError && (
+  <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/70 px-4 py-3.5">
+    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+    <p className="text-[12.5px] font-medium text-red-700">{serverError}</p>
+  </div>
+)}
 
                 {/* Name + Email row */}
                 <div className="grid gap-5 sm:grid-cols-2">

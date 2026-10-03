@@ -6,6 +6,7 @@ import IntroSection from "./components/IntroSection";
 import Subscribe from "./components/Subscribe";
 import Testimonials from "./components/Testimonials";
 import WhyChooseUs from "./components/WhyChooseUs";
+import VideoSection from "./components/VideoSection";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <IntroSection/>
       <FeaturedMenu/>
       <WhyChooseUs/>
+      <VideoSection/>
       <Testimonials/>
       <Blogs/>
       <FinalCTA/>

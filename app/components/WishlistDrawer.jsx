@@ -25,7 +25,7 @@ export default function WishlistDrawer() {
 
   const moveToCart = (item) => {
     addItem(item);
-    removeItem(item.id);
+    removeItem(item.slug);
   };
 
   const moveAllToCart = () => {
@@ -137,7 +137,7 @@ export default function WishlistDrawer() {
             <ul className="divide-y divide-neutral-200/70 px-6 sm:px-7">
               {items.map((item) => (
                 <li
-                  key={item.id}
+                  key={item.slug}
                   className="group/item flex items-start gap-4 py-5"
                 >
                   {/* Thumbnail */}
@@ -200,7 +200,7 @@ export default function WishlistDrawer() {
 
                         {/* Remove */}
                         <button
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(item.slug)}
                           aria-label={`Remove ${item.name} from wishlist`}
                           className="grid h-7 w-7 place-items-center rounded-full text-neutral-400 transition-all duration-300 hover:bg-red-50 hover:text-red-500"
                         >

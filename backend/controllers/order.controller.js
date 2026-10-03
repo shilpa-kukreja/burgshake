@@ -1,12 +1,14 @@
 import Order from "../models/Order.js";
+import Coupon from "../models/Coupon.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { resolveCoupon } from "../utils/couponUtils.js";
 import {
   createRazorpayOrder,
   verifyRazorpaySignature,
 } from "../services/razorpay.service.js";
 
-/* ── Outlet lookup (matches frontend) ─────────────── */
+/* ── Outlet lookup ────────────────────────────────── */
 const OUTLETS = {
   bandra: {
     name: "Bandra West",
@@ -18,7 +20,10 @@ const OUTLETS = {
   },
 };
 
-/* ── Validate + normalise payload ─────────────────── */
+/* Orders at or above this must be paid online */
+const ONLINE_PAYMENT_THRESHOLD = 500;
+
+/* ── Validate + normalise ─────────────────────────── */
 function validateOrderPayload(body) {
   const {
     items,
@@ -28,7 +33,6 @@ function validateOrderPayload(body) {
     timeSlot,
     timeSlotLabel,
     payment,
-    notes,
   } = body;
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -47,12 +51,23 @@ function validateOrderPayload(body) {
     throw new ApiError(400, "Invalid email address.");
   }
 
-  if (!outlet || !OUTLETS[outlet]) {
+  /* Accept either an outlet id string, OR an object { id, name, address } */
+  const outletId =
+    typeof outlet === "string" ? outlet : outlet?.id;
+  if (!outletId || !OUTLETS[outletId]) {
     throw new ApiError(400, "Invalid pickup outlet.");
   }
 
-  if (!date || !["today", "tomorrow"].includes(date)) {
+  /* Accept ISO date "YYYY-MM-DD" (today up to +7 days) */
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     throw new ApiError(400, "Invalid pickup date.");
+  }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const pickupDate = new Date(`${date}T00:00:00`);
+  const daysAhead = Math.round((pickupDate - today) / 86400000);
+  if (daysAhead < 0 || daysAhead > 7) {
+    throw new ApiError(400, "Pickup date must be within the next 7 days.");
   }
 
   if (!timeSlot || !timeSlotLabel) {
@@ -63,48 +78,52 @@ function validateOrderPayload(body) {
     throw new ApiError(400, "Invalid payment method.");
   }
 
-  /* Recalculate totals server-side (never trust client) */
+  /* Recalculate subtotal + tax server-side — never trust the client */
   const subtotal = items.reduce(
     (sum, i) => sum + Number(i.price) * Number(i.qty || 1),
     0
   );
   const tax = Math.round(subtotal * 0.05);
 
-  return { subtotal, tax };
+  return { subtotal, tax, outletId };
 }
 
 /* ═══════════════════════════════════════════════════
    POST /api/orders
-   Create order (either pay-at-counter or Razorpay flow)
    ═══════════════════════════════════════════════════ */
 export async function createOrder(req, res, next) {
   try {
     const {
       items,
       customer,
-      outlet,
       date,
       timeSlot,
       timeSlotLabel,
       payment,
       notes,
       couponCode,
-      discount: clientDiscount,
     } = req.body;
 
-    const { subtotal, tax } = validateOrderPayload(req.body);
+    const { subtotal, tax, outletId } = validateOrderPayload(req.body);
 
-    /* Sanitise discount — cap it so total never goes negative */
-    const discount = Math.min(
-      Math.max(0, Number(clientDiscount) || 0),
-      subtotal + tax
-    );
+    /* ── SERVER-SIDE discount computation ──────────── */
+    const { coupon, discount } = await resolveCoupon({
+      code: couponCode,
+      amount: subtotal,
+    });
 
     const total = Math.max(0, subtotal + tax - discount);
 
-    const outletInfo = OUTLETS[outlet];
+    /* ── Enforce payment threshold ─────────────────── */
+    if (total >= ONLINE_PAYMENT_THRESHOLD && payment !== "razorpay") {
+      throw new ApiError(
+        400,
+        `Orders of ₹${ONLINE_PAYMENT_THRESHOLD} or more must be paid online.`
+      );
+    }
 
-    /* Base order object (created in both flows) */
+    const outletInfo = OUTLETS[outletId];
+
     const orderData = {
       userId: req.user?._id || null,
       customer: {
@@ -121,7 +140,7 @@ export async function createOrder(req, res, next) {
         customizations: i.customizations || undefined,
       })),
       pickup: {
-        outletId: outlet,
+        outletId,
         outletName: outletInfo.name,
         outletAddress: outletInfo.address,
         date,
@@ -131,20 +150,27 @@ export async function createOrder(req, res, next) {
       subtotal,
       tax,
       discount,
-      couponCode: couponCode || "",
+      couponCode: coupon?.couponCode || "",
       total,
       notes: (notes || "").slice(0, 500),
       payment,
       paymentLabel: payment === "razorpay" ? "Paid Online" : "Pay at Counter",
     };
 
-    /* ── Pay at counter ────────────────────────────── */
+    /* ═══ PAY AT COUNTER ═══════════════════════════ */
     if (payment === "counter") {
       const order = await Order.create({
         ...orderData,
         status: "confirmed",
         paymentStatus: "pending",
       });
+
+      /* Increment coupon usage now — order is confirmed */
+      if (coupon) {
+        await Coupon.findByIdAndUpdate(coupon._id, {
+          $inc: { usedCount: 1 },
+        });
+      }
 
       return res.status(201).json(
         new ApiResponse(
@@ -155,8 +181,8 @@ export async function createOrder(req, res, next) {
       );
     }
 
-    /* ── Pay online (Razorpay) ─────────────────────── */
-    /* 1. Create the order first as pending */
+    /* ═══ PAY ONLINE (Razorpay) ════════════════════ */
+    /* 1. Create order as pending. Coupon increment happens at verify. */
     const order = await Order.create({
       ...orderData,
       status: "pending",
@@ -174,7 +200,7 @@ export async function createOrder(req, res, next) {
       },
     });
 
-    /* 3. Save Razorpay order id back to our order */
+    /* 3. Save Razorpay order id */
     order.razorpay.orderId = rzOrder.id;
     await order.save();
 
@@ -199,7 +225,6 @@ export async function createOrder(req, res, next) {
 
 /* ═══════════════════════════════════════════════════
    POST /api/orders/verify
-   Verify Razorpay payment signature
    ═══════════════════════════════════════════════════ */
 export async function verifyOrderPayment(req, res, next) {
   try {
@@ -213,7 +238,6 @@ export async function verifyOrderPayment(req, res, next) {
       throw new ApiError(400, "Missing payment verification details.");
     }
 
-    /* Find our order by razorpay.orderId */
     const order = await Order.findOne({
       "razorpay.orderId": razorpay_order_id,
     });
@@ -222,7 +246,13 @@ export async function verifyOrderPayment(req, res, next) {
       throw new ApiError(404, "Order not found for this payment.");
     }
 
-    /* Verify signature */
+    /* Idempotency — don't double-process */
+    if (order.paymentStatus === "paid") {
+      return res.json(
+        new ApiResponse(200, { order }, "Payment already verified.")
+      );
+    }
+
     const valid = verifyRazorpaySignature({
       razorpay_order_id,
       razorpay_payment_id,
@@ -236,13 +266,20 @@ export async function verifyOrderPayment(req, res, next) {
       throw new ApiError(400, "Payment verification failed.");
     }
 
-    /* Update order as paid */
     order.paymentStatus = "paid";
     order.status = "confirmed";
     order.razorpay.paymentId = razorpay_payment_id;
     order.razorpay.signature = razorpay_signature;
     order.razorpay.paidAt = new Date();
     await order.save();
+
+    /* Increment coupon usage on successful payment */
+    if (order.couponCode) {
+      await Coupon.findOneAndUpdate(
+        { couponCode: order.couponCode },
+        { $inc: { usedCount: 1 } }
+      );
+    }
 
     res.json(
       new ApiResponse(200, { order }, "Payment verified. Order confirmed.")
@@ -254,7 +291,6 @@ export async function verifyOrderPayment(req, res, next) {
 
 /* ═══════════════════════════════════════════════════
    GET /api/orders/my
-   Customer's order history
    ═══════════════════════════════════════════════════ */
 export async function getMyOrders(req, res, next) {
   try {
@@ -278,7 +314,6 @@ export async function getMyOrders(req, res, next) {
 
 /* ═══════════════════════════════════════════════════
    GET /api/orders/:orderNumber
-   Get one order (must be owner or admin)
    ═══════════════════════════════════════════════════ */
 export async function getOrderByNumber(req, res, next) {
   try {
@@ -288,12 +323,17 @@ export async function getOrderByNumber(req, res, next) {
 
     if (!order) throw new ApiError(404, "Order not found.");
 
-    /* Only owner or admin */
     const isOwner =
-      req.user && order.userId && order.userId.toString() === req.user._id.toString();
+      req.user &&
+      order.userId &&
+      order.userId.toString() === req.user._id.toString();
     const isAdmin = req.user?.role === "admin";
+    const isGuestOrder = !order.userId;
 
-    if (!isOwner && !isAdmin) {
+    /* Guest orders are readable by order number alone — the number
+       IS the secret (like a receipt code). Logged-in orders require
+       owner or admin. */
+    if (!isOwner && !isAdmin && !isGuestOrder) {
       throw new ApiError(403, "You cannot view this order.");
     }
 
@@ -305,7 +345,6 @@ export async function getOrderByNumber(req, res, next) {
 
 /* ═══════════════════════════════════════════════════
    POST /api/orders/:orderNumber/cancel
-   Customer can cancel if still pending/confirmed
    ═══════════════════════════════════════════════════ */
 export async function cancelOrder(req, res, next) {
   try {
@@ -317,7 +356,6 @@ export async function cancelOrder(req, res, next) {
 
     if (!order) throw new ApiError(404, "Order not found.");
 
-    /* Owner only */
     if (
       !order.userId ||
       order.userId.toString() !== req.user._id.toString()
@@ -325,7 +363,6 @@ export async function cancelOrder(req, res, next) {
       throw new ApiError(403, "You cannot cancel this order.");
     }
 
-    /* Only cancellable if not yet preparing */
     if (!["pending", "confirmed"].includes(order.status)) {
       throw new ApiError(
         400,

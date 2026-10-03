@@ -14,6 +14,7 @@ import {
   Search,
   X,
   Package,
+  Loader2,
 } from "lucide-react";
 
 const FILTERS = [
@@ -31,7 +32,24 @@ function isSameDay(a, b) {
   );
 }
 
-export default function AccountOrders({ orders = [] }) {
+/* "2026-09-23" → "Today" | "Tomorrow" | "Fri, 26 Sep" */
+function formatPickupDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (isNaN(d)) return dateStr;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  return d.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+export default function AccountOrders({ orders = [], loading = false }) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(null);
@@ -39,25 +57,25 @@ export default function AccountOrders({ orders = [] }) {
   const filtered = useMemo(() => {
     let list = [...orders];
 
-    /* Date filter */
+    /* Date filter — uses createdAt (backend) */
     const now = new Date();
     if (filter === "today") {
       list = list.filter(
-        (o) => o.placedAt && isSameDay(new Date(o.placedAt), now)
+        (o) => o.createdAt && isSameDay(new Date(o.createdAt), now)
       );
     } else if (filter === "week") {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       list = list.filter(
-        (o) => o.placedAt && new Date(o.placedAt) >= weekAgo
+        (o) => o.createdAt && new Date(o.createdAt) >= weekAgo
       );
     } else if (filter === "month") {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       list = list.filter(
-        (o) => o.placedAt && new Date(o.placedAt) >= monthAgo
+        (o) => o.createdAt && new Date(o.createdAt) >= monthAgo
       );
     }
 
-    /* Search */
+    /* Search by order number or item name */
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -69,6 +87,29 @@ export default function AccountOrders({ orders = [] }) {
 
     return list;
   }, [orders, filter, search]);
+
+  /* ── Loading skeleton ────────────────────────────── */
+  if (loading) {
+    return (
+      <div className="space-y-3.5">
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="flex animate-pulse items-center gap-4 rounded-2xl border border-neutral-200/70 bg-white p-5"
+          >
+            <div className="flex gap-0">
+              <div className="h-12 w-12 rounded-xl bg-neutral-200" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-32 rounded bg-neutral-200" />
+              <div className="h-3 w-48 rounded bg-neutral-100" />
+            </div>
+            <div className="h-5 w-16 rounded bg-neutral-200" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   /* ── Empty state ─────────────────────────────────── */
   if (orders.length === 0) {
@@ -154,8 +195,8 @@ export default function AccountOrders({ orders = [] }) {
         <ul className="space-y-3.5">
           {filtered.map((order) => {
             const isOpen = expanded === order.orderNumber;
-            const placedDate = order.placedAt
-              ? new Date(order.placedAt)
+            const placedDate = order.createdAt
+              ? new Date(order.createdAt)
               : null;
 
             return (
@@ -172,9 +213,9 @@ export default function AccountOrders({ orders = [] }) {
                 >
                   {/* Thumbnail stack */}
                   <div className="relative flex shrink-0 items-center">
-                    {order.items.slice(0, 3).map((item, i) => (
+                    {(order.items || []).slice(0, 3).map((item, i) => (
                       <div
-                        key={item.id}
+                        key={`${item.slug}-${i}`}
                         className="relative h-12 w-12 overflow-hidden rounded-xl border-2 border-white bg-neutral-100 ring-1 ring-neutral-200/70"
                         style={{
                           marginLeft: i === 0 ? 0 : -12,
@@ -189,7 +230,7 @@ export default function AccountOrders({ orders = [] }) {
                         />
                       </div>
                     ))}
-                    {order.items.length > 3 && (
+                    {order.items?.length > 3 && (
                       <div
                         className="relative grid h-12 w-12 place-items-center rounded-xl border-2 border-white bg-neutral-950 text-[11px] font-bold text-white ring-1 ring-neutral-200/70"
                         style={{ marginLeft: -12, zIndex: 0 }}
@@ -222,14 +263,18 @@ export default function AccountOrders({ orders = [] }) {
                           })}
                         </span>
                       )}
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {order.timeSlotLabel}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {order.outlet?.name}
-                      </span>
+                      {order.pickup?.timeSlotLabel && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {order.pickup.timeSlotLabel}
+                        </span>
+                      )}
+                      {order.pickup?.outletName && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {order.pickup.outletName}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -262,32 +307,46 @@ export default function AccountOrders({ orders = [] }) {
                       Items
                     </div>
                     <ul className="mt-3 space-y-2.5">
-                      {order.items.map((item) => (
-                        <li
-                          key={item.id}
-                          className="flex items-center gap-3 rounded-xl border border-neutral-200/70 bg-white p-2.5"
-                        >
-                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
-                            <img
-                              src={item.img}
-                              alt={item.name}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-[12.5px] font-bold text-neutral-900">
-                              {item.name}
+                      {(order.items || []).map((item, idx) => {
+                        const c = item.customizations;
+                        const customParts = c
+                          ? [c.bun, c.patty, ...(c.extras || [])].filter(
+                              Boolean
+                            )
+                          : [];
+
+                        return (
+                          <li
+                            key={`${item.slug}-${idx}`}
+                            className="flex items-start gap-3 rounded-xl border border-neutral-200/70 bg-white p-2.5"
+                          >
+                            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
+                              <img
+                                src={item.img}
+                                alt={item.name}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
                             </div>
-                            <div className="mt-0.5 text-[10.5px] font-medium text-neutral-400">
-                              ₹{item.price} × {item.qty}
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-[12.5px] font-bold text-neutral-900">
+                                {item.name}
+                              </div>
+                              {customParts.length > 0 && (
+                                <div className="mt-0.5 truncate text-[10.5px] font-medium text-neutral-500">
+                                  {customParts.join(" · ")}
+                                </div>
+                              )}
+                              <div className="mt-0.5 text-[10.5px] font-medium text-neutral-400">
+                                ₹{item.price} × {item.qty}
+                              </div>
                             </div>
-                          </div>
-                          <div className="shrink-0 font-display text-[13px] font-bold tabular-nums text-neutral-950">
-                            ₹{item.price * item.qty}
-                          </div>
-                        </li>
-                      ))}
+                            <div className="shrink-0 font-display text-[13px] font-bold tabular-nums text-neutral-950">
+                              ₹{item.price * item.qty}
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
 
                     {/* Totals */}
@@ -334,8 +393,17 @@ export default function AccountOrders({ orders = [] }) {
                       <Package className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
                       <p className="text-[11.5px] leading-[1.55] text-amber-800">
                         Takeaway only — pick up at{" "}
-                        <strong>{order.outlet?.name}</strong> by{" "}
-                        <strong>{order.timeSlotLabel}</strong>.
+                        <strong>
+                          {order.pickup?.outletName || "your selected outlet"}
+                        </strong>{" "}
+                        on <strong>{formatPickupDate(order.pickup?.date)}</strong>
+                        {order.pickup?.timeSlotLabel && (
+                          <>
+                            {" "}
+                            by <strong>{order.pickup.timeSlotLabel}</strong>
+                          </>
+                        )}
+                        .
                       </p>
                     </div>
                   </div>

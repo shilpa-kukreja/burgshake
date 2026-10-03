@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 
 const WishlistContext = createContext(null);
@@ -16,18 +17,25 @@ export function WishlistProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  /* ── Read from localStorage ─────────────────────── */
+  /* Read */
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        /* Purge legacy entries that don't have a slug */
+        const cleaned = Array.isArray(parsed)
+          ? parsed.filter((i) => i && i.slug)
+          : [];
+        setItems(cleaned);
+      }
     } catch (e) {
       console.error("Wishlist read error:", e);
     }
     setHydrated(true);
   }, []);
 
-  /* ── Persist to localStorage (NO dispatch — avoids loop) ── */
+  /* Persist */
   useEffect(() => {
     if (!hydrated) return;
     try {
@@ -37,7 +45,7 @@ export function WishlistProvider({ children }) {
     }
   }, [items, hydrated]);
 
-  /* ── Body scroll lock when drawer open ───────────── */
+  /* Scroll lock */
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => {
@@ -45,7 +53,7 @@ export function WishlistProvider({ children }) {
     };
   }, [isOpen]);
 
-  /* ── ESC closes drawer ───────────────────────────── */
+  /* ESC */
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") setIsOpen(false);
@@ -54,55 +62,65 @@ export function WishlistProvider({ children }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  /* ── Actions ─────────────────────────────────────── */
+  /* Actions */
   const openWishlist = useCallback(() => setIsOpen(true), []);
   const closeWishlist = useCallback(() => setIsOpen(false), []);
   const toggleWishlistDrawer = useCallback(() => setIsOpen((v) => !v), []);
 
+  /* ── KEY CHANGE: lookup by slug, not id ── */
   const isWishlisted = useCallback(
-    (id) => items.some((i) => i.id === id),
+    (slug) => items.some((i) => i.slug === slug),
     [items]
   );
 
   const toggleItem = useCallback((product) => {
     setItems((prev) => {
-      const exists = prev.find((p) => p.id === product.id);
-      if (exists) return prev.filter((p) => p.id !== product.id);
-      return [
-        ...prev,
-        {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          img: product.img,
-          desc: product.desc,
-          rating: product.rating,
-          mrp: product.mrp,
-        },
-      ];
+      const exists = prev.find((p) => p.slug === product.slug);
+
+      if (exists) {
+        return prev.filter((p) => p.slug !== product.slug);
+      }
+
+      return [...prev, { ...product }];
     });
   }, []);
 
-  const removeItem = useCallback((id) => {
-    setItems((prev) => prev.filter((p) => p.id !== id));
+  const removeItem = useCallback((slug) => {
+    setItems((prev) => prev.filter((p) => p.slug !== slug));
   }, []);
 
   const clearWishlist = useCallback(() => setItems([]), []);
 
   const count = items.length;
 
-  const value = {
-    items,
-    isOpen,
-    count,
-    openWishlist,
-    closeWishlist,
-    toggleWishlistDrawer,
-    isWishlisted,
-    toggleItem,
-    removeItem,
-    clearWishlist,
-  };
+  const value = useMemo(
+    () => ({
+      items,
+      isOpen,
+      count,
+      hydrated,
+      openWishlist,
+      closeWishlist,
+      toggleWishlistDrawer,
+      isWishlisted,
+      toggleItem,
+      removeItem,
+      clearWishlist,
+    }),
+    [
+      items,
+      isOpen,
+      count,
+      hydrated,
+      openWishlist,
+      closeWishlist,
+      toggleWishlistDrawer,
+      isWishlisted,
+      toggleItem,
+      removeItem,
+      clearWishlist,
+    ]
+  );
 
   return (
     <WishlistContext.Provider value={value}>
@@ -111,11 +129,11 @@ export function WishlistProvider({ children }) {
   );
 }
 
-/* Safe fallback — avoids crashes if used outside provider */
 const FALLBACK = {
   items: [],
   isOpen: false,
   count: 0,
+  hydrated: false,
   openWishlist: () => {},
   closeWishlist: () => {},
   toggleWishlistDrawer: () => {},
@@ -127,10 +145,5 @@ const FALLBACK = {
 
 export function useWishlist() {
   const ctx = useContext(WishlistContext);
-  if (!ctx && typeof window !== "undefined") {
-    console.warn(
-      "[Burgshake] useWishlist() called outside <WishlistProvider>. Using fallback."
-    );
-  }
   return ctx || FALLBACK;
 }

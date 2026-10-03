@@ -1,22 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, ArrowRight, Check } from "lucide-react";
+import { Mail, ArrowRight, Check, AlertCircle } from "lucide-react";
+import { api } from "../lib/api";
 
 export default function Subscribe() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!email || !email.includes("@")) return;
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  const trimmed = email.trim();
+  if (!trimmed) return;
+
+  setLoading(true);
+  setError("");
+  try {
+    await api.subscribe(trimmed);
     setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setEmail("");
-    }, 2200);
-  };
-
+    setEmail("");
+    setTimeout(() => setSubmitted(false), 2500);
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <section className="relative overflow-hidden bg-white py-14 sm:py-16">
       {/* Warm glow */}
@@ -34,13 +45,11 @@ export default function Subscribe() {
 
           {/* ── LEFT: Copy ─────────────────────────── */}
           <div className="flex-1">
-            {/* Small eyebrow */}
             <div className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">
               <span className="h-px w-6 bg-brand-500" />
               The Burgshake Letter
             </div>
 
-            {/* Headline — small and punchy */}
             <h3 className="mt-2.5 font-display text-[19px] font-bold leading-[1.25] tracking-[-0.015em] text-neutral-950 sm:text-[21px]">
               Get new flavours first —{" "}
               <span className="font-serif italic font-normal text-brand-500">
@@ -67,10 +76,14 @@ export default function Subscribe() {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError("");
+                  }}
+                  disabled={loading}
                   placeholder="your@email.com"
                   aria-label="Email address"
-                  className="w-full rounded-full border border-neutral-200 bg-white py-3 pl-10 pr-4 text-[13.5px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none transition-all duration-300 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+                  className="w-full rounded-full border border-neutral-200 bg-white py-3 pl-10 pr-4 text-[13.5px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none transition-all duration-300 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 disabled:opacity-60"
                 />
               </div>
 
@@ -78,13 +91,19 @@ export default function Subscribe() {
               <button
                 type="submit"
                 aria-label="Subscribe"
-                className={`group inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full px-5 py-3 text-[13px] font-bold shadow-[0_10px_26px_-12px_rgba(249,115,22,0.6)] transition-all duration-300 ${
+                disabled={loading}
+                className={`group inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full px-5 py-3 text-[13px] font-bold shadow-[0_10px_26px_-12px_rgba(249,115,22,0.6)] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-80 ${
                   submitted
                     ? "bg-emerald-500 text-white"
                     : "bg-neutral-950 text-white hover:-translate-y-0.5 hover:bg-brand-500 hover:shadow-[0_14px_32px_-12px_rgba(249,115,22,0.75)]"
                 }`}
               >
-                {submitted ? (
+                {loading ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    Subscribing…
+                  </>
+                ) : submitted ? (
                   <>
                     <Check className="h-3.5 w-3.5" strokeWidth={3} />
                     Subscribed
@@ -98,17 +117,27 @@ export default function Subscribe() {
               </button>
             </div>
 
+            {/* Error message */}
+            {error && (
+              <div className="mt-2.5 flex items-center gap-1.5 pl-1 text-[11px] font-semibold text-red-600">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                {error}
+              </div>
+            )}
+
             {/* Tiny privacy note */}
-            <p className="mt-2.5 pl-1 text-[10.5px] text-neutral-400">
-              By subscribing you agree to our{" "}
-              <a
-                href="/privacy"
-                className="font-semibold text-neutral-600 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-brand-600"
-              >
-                Privacy Policy
-              </a>
-              .
-            </p>
+            {!error && (
+              <p className="mt-2.5 pl-1 text-[10.5px] text-neutral-400">
+                By subscribing you agree to our{" "}
+                <a
+                  href="/privacy"
+                  className="font-semibold text-neutral-600 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-brand-600"
+                >
+                  Privacy Policy
+                </a>
+                .
+              </p>
+            )}
           </form>
         </div>
       </div>

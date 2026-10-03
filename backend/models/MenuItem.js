@@ -153,36 +153,49 @@ const menuItemSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    /* ── Long description (markdown) — product detail page ── */
+longDesc: {
+  type: String,
+  default: "",
+  trim: true,
+  maxlength: [2000, "Long description must be under 2000 characters"],
+},
+
+/* ── Per-star rating distribution ── */
+ratingBreakdown: {
+  star5: { type: Number, default: 0, min: 0 },
+  star4: { type: Number, default: 0, min: 0 },
+  star3: { type: Number, default: 0, min: 0 },
+  star2: { type: Number, default: 0, min: 0 },
+  star1: { type: Number, default: 0, min: 0 },
+},
   },
   { timestamps: true }
 );
 
 
 /* ── Auto-generate unique slug from name on create ── */
-menuItemSchema.pre("save", async function (next) {
-  try {
-    /* Only generate on new docs (never change after create) */
-    if (!this.isNew) return next();
-    if (this.slug) return next();
+/* ── Auto-generate unique slug from name on create ── */
+menuItemSchema.pre("save", async function () {
+  /* Only generate on new docs (never change after create) */
+  if (!this.isNew) return;
+  if (this.slug) return;
 
-    const base = slugify(this.name) || "item";
-    let slug = base;
-    let counter = 1;
+  const base = slugify(this.name) || "item";
+  let slug = base;
+  let counter = 1;
 
-    while (
-      await mongoose.model("MenuItem").exists({
-        slug,
-        _id: { $ne: this._id },
-      })
-    ) {
-      slug = `${base}-${counter++}`;
-    }
-
-    this.slug = slug;
-    next();
-  } catch (err) {
-    next(err);
+  while (
+    await mongoose.model("MenuItem").exists({
+      slug,
+      _id: { $ne: this._id },
+    })
+  ) {
+    slug = `${base}-${counter++}`;
   }
+
+  this.slug = slug;
 });
 
 

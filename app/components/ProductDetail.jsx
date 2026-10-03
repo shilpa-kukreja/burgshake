@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import {
   Minus,
@@ -632,6 +633,33 @@ export default function ProductDetail({ item }) {
               </span> */}
             </div>
 
+                        {/* Rating breakdown */}
+            {item.ratingBreakdown && item.reviews > 0 && (
+              <div className="mt-4 max-w-sm space-y-1.5">
+                {[5, 4, 3, 2, 1].map((n) => {
+                  const count = item.ratingBreakdown[`star${n}`] || 0;
+                  const pct = (count / item.reviews) * 100;
+                  return (
+                    <div key={n} className="flex items-center gap-2">
+                      <span className="flex w-9 items-center gap-1 text-[10.5px] font-bold text-neutral-600">
+                        {n}
+                        <Star className="h-2.5 w-2.5 fill-brand-500 text-brand-500" />
+                      </span>
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
+                        <div
+                          className="h-full rounded-full bg-brand-500 transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right text-[10.5px] font-semibold tabular-nums text-neutral-400">
+                        {count}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Short desc */}
             <p className="mt-5 max-w-xl text-[14.5px] leading-[1.75] text-neutral-600">
               {item.desc}
@@ -892,16 +920,23 @@ export default function ProductDetail({ item }) {
           <div className="mt-10 grid gap-8 lg:grid-cols-12 lg:gap-10">
             {/* ══ LEFT: Description + Ingredients ══ */}
             <div className="lg:col-span-7 space-y-10">
-              {/* Description */}
+            {/* Long description */}
               <div>
                 <h3 className="font-display text-[16px] font-bold tracking-[-0.01em] text-neutral-950">
-                  Description
+                  About this dish
                 </h3>
-                <p className="mt-3 text-[14px] leading-[1.8] text-neutral-600">
-                  {item.desc} Each plate is prepared fresh when you order —
-                  never reheated, never pre-made. Perfect for a quick takeaway
-                  lunch or a slow weekend treat.
-                </p>
+
+                {item.longDesc ? (
+                  <div className="prose prose-sm mt-3 max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:tracking-[-0.01em] prose-headings:text-neutral-950 prose-p:my-3 prose-p:text-[14px] prose-p:leading-[1.8] prose-p:text-neutral-600 prose-strong:text-neutral-900 prose-ul:my-3 prose-ol:my-3 prose-li:my-0.5 prose-li:text-[14px] prose-li:leading-[1.7] prose-li:text-neutral-600 prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline">
+                    <ReactMarkdown>{item.longDesc}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-[14px] leading-[1.8] text-neutral-600">
+                    {item.desc} Each plate is prepared fresh when you order —
+                    never reheated, never pre-made. Perfect for a quick takeaway
+                    lunch or a slow weekend treat.
+                  </p>
+                )}
 
                 <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
                   {[
@@ -922,7 +957,6 @@ export default function ProductDetail({ item }) {
                   ))}
                 </ul>
               </div>
-
               {/* Ingredients */}
               <div>
                 <h3 className="font-display text-[16px] font-bold tracking-[-0.01em] text-neutral-950">

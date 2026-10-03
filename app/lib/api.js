@@ -1,7 +1,7 @@
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+  process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const TOKEN_KEY = "burgshake_admin_token";
+const TOKEN_KEY = "burgshake_token";
 
 /* ── Token helpers ─────────────────────────────── */
 export function getToken() {
@@ -100,16 +100,43 @@ export const api = {
 
   me: () => request("/api/auth/me"),
 
-  logout: () => {
-    clearToken();
-    return Promise.resolve();
-  },
+  // logout: () => {
+  //   clearToken();
+  //   return Promise.resolve();
+  // },
+
+  logout: async () => {
+  try {
+    await request("/api/auth/logout", { method: "POST", auth: false });
+  } catch {
+    /* ignore — clearing local state is what matters */
+  }
+  clearToken();
+},
 
   updateProfile: (data) =>
     request("/api/auth/profile", { method: "PATCH", body: data }),
 
   changePassword: (data) =>
     request("/api/auth/password", { method: "PATCH", body: data }),
+
+
+  /* ── Phone OTP auth ─────────────────────────────── */
+  sendOtp: (phone) =>
+    request("/api/auth/send-otp", {
+      method: "POST",
+      body: { phone },
+      auth: false,
+    }),
+
+  verifyOtp: (data) =>
+    request("/api/auth/verify-otp", {
+      method: "POST",
+      body: data,
+      auth: false,
+    }),
+
+
 
   /* ═══════════════════════════════════════════════
      PUBLIC — MENU
@@ -137,11 +164,76 @@ export const api = {
      PUBLIC — CONTACT
      ═══════════════════════════════════════════════ */
   submitContact: (data) =>
-    request("/api/contact", {
+    request("/api/submit/contact", {
       method: "POST",
       body: data,
       auth: false,
     }),
+
+
+  /* ═══════════════════════════════════════════════
+     PUBLIC — BLOGS
+     ═══════════════════════════════════════════════ */
+  getBlogs: (params = {}) => {
+    const q = new URLSearchParams(
+      Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== "")
+      )
+    ).toString();
+    return request(`/api/blogs${q ? `?${q}` : ""}`, { auth: false });
+  },
+
+  getBlogBySlug: (slug) =>
+    request(`/api/blogs/slug/${slug}`, { auth: false }),
+
+  /* ═══════════════════════════════════════════════
+     ADMIN — BLOGS
+     ═══════════════════════════════════════════════ */
+  adminListBlogs: (params = {}) => {
+    const q = new URLSearchParams(
+      Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== "")
+      )
+    ).toString();
+    return request(`/api/admin/blogs${q ? `?${q}` : ""}`);
+  },
+
+  adminGetBlog: (id) => request(`/api/admin/blogs/${id}`),
+
+  adminCreateBlog: (data) =>
+    request("/api/admin/blogs", { method: "POST", body: data }),
+
+  adminUpdateBlog: (id, data) =>
+    request(`/api/admin/blogs/${id}`, { method: "PATCH", body: data }),
+
+  adminDeleteBlog: (id) =>
+    request(`/api/admin/blogs/${id}`, { method: "DELETE" }),
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+  /* ═══════════════════════════════════════════════
+     PUBLIC — SUBSCRIBE
+     ═══════════════════════════════════════════════ */
+  subscribe: (data) =>
+    request("/api/subscribe", {
+      method: "POST",
+      body: data,
+      auth: false,
+    }),
+
+
 
   /* ═══════════════════════════════════════════════
      ORDERS (customer)
@@ -319,6 +411,75 @@ export const api = {
 
   adminContactStats: () => request("/api/admin/contacts/stats/summary"),
 
+
+  /* ═══════════════════════════════════════════════
+     PUBLIC — COUPONS
+     ═══════════════════════════════════════════════ */
+  applyCoupon: (couponCode, totalAmount) =>
+    request("/api/coupons/apply", {
+      method: "POST",
+      body: { couponCode, totalAmount },
+      auth: false,
+    }),
+
+  getActiveCoupons: () =>
+    request("/api/coupons/active", { auth: false }),
+
+  /* ═══════════════════════════════════════════════
+     ADMIN — COUPONS
+     ═══════════════════════════════════════════════ */
+  adminListCoupons: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/api/admin/coupons${q ? `?${q}` : ""}`);
+  },
+
+  adminCreateCoupon: (data) =>
+    request("/api/admin/coupons", { method: "POST", body: data }),
+
+  adminUpdateCoupon: (id, data) =>
+    request(`/api/admin/coupons/${id}`, { method: "PATCH", body: data }),
+
+  adminToggleCoupon: (id) =>
+    request(`/api/admin/coupons/${id}/toggle`, { method: "PATCH" }),
+
+  adminDeleteCoupon: (id) =>
+    request(`/api/admin/coupons/${id}`, { method: "DELETE" }),
+
+
+
+     /* PUBLIC — SUBSCRIBE */
+  subscribe: (email) =>
+    request("/api/subscribe", {
+      method: "POST",
+      body: { email },
+      auth: false,
+    }),
+
+  /* ADMIN — SUBSCRIBERS */
+  adminListSubscribers: () => request("/api/admin/subscribers"),
+
+  adminDeleteSubscriber: (id) =>
+    request(`/api/admin/subscribers/${id}`, { method: "DELETE" }),
+
+  /**
+   * CSV export — the backend streams a file with Content-Disposition.
+   * We can't use `request()` because it forces JSON parsing; instead
+   * fetch, read as a Blob, and return it for the caller to download.
+   */
+  adminExportSubscribers: async () => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE}/api/admin/subscribers/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const err = new Error("Export failed");
+      err.status = res.status;
+      throw err;
+    }
+    return res.blob();
+  },
+
   /* ═══════════════════════════════════════════════
      ADMIN — USERS
      ═══════════════════════════════════════════════ */
@@ -343,3 +504,8 @@ export const api = {
 
   adminUserStats: () => request("/api/admin/users/stats/summary"),
 };
+
+
+
+
+

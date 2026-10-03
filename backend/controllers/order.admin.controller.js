@@ -101,12 +101,8 @@ export async function adminUpdateOrderStatus(req, res, next) {
     const { status, note } = req.body;
 
     const allowed = [
-      "pending",
-      "confirmed",
-      "preparing",
-      "ready",
-      "completed",
-      "cancelled",
+      "pending", "confirmed", "preparing",
+      "ready", "completed", "cancelled",
     ];
 
     if (!allowed.includes(status)) {
@@ -118,10 +114,13 @@ export async function adminUpdateOrderStatus(req, res, next) {
     });
     if (!order) throw new ApiError(404, "Order not found.");
 
+    /* Update + push to history in one go */
     order.status = status;
-    if (note) {
-      /* will be pushed to statusHistory by pre-save hook */
-    }
+    order.statusHistory.push({
+      status,
+      at: new Date(),
+      note: note || "",
+    });
     await order.save();
 
     res.json(new ApiResponse(200, { order }, `Status updated: ${status}`));

@@ -42,26 +42,55 @@ const AdminLoginPageContent=()=> {
     }
   }, [errorParam]);
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   setLoading(true);
+
+  //   const res = await login(email, password);
+  //   setLoading(false);
+
+  //   if (!res.ok) {
+  //     setError(res.error);
+  //     return;
+  //   }
+
+  //   if (res.user.role !== "admin") {
+  //     setError("This account doesn't have admin access.");
+  //     return;
+  //   }
+
+  //   router.replace(from);
+  // };
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    const res = await login(email, password);
+  const res = await login(email, password);
+
+  if (!res.ok) {
+    setError(res.error);
     setLoading(false);
+    return;
+  }
 
-    if (!res.ok) {
-      setError(res.error);
-      return;
-    }
+  if (res.user.role !== "admin") {
+    setError("This account doesn't have admin access.");
+    setLoading(false);
+    return;
+  }
 
-    if (res.user.role !== "admin") {
-      setError("This account doesn't have admin access.");
-      return;
-    }
+  /* Success — do NOT call router.replace here.
+     The useEffect at the top of this file watches `user`/`isAdmin`
+     from useAuth() and navigates once the provider has committed
+     the new state. Calling replace() from the handler races that
+     commit: the dashboard would mount with user=null, its guard
+     would bounce us back to /admin/login. */
+};
 
-    router.replace(from);
-  };
 
   return (
     <div className="relative flex min-h-screen items-center justify-center mt-5 bg-[#FDFCFB] px-4 py-12">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,6 +20,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/WishlistContext";
 import AccountOrders from "../components/AccountOrders";
+import { api } from "../lib/api";
 
 const TABS = [
   { id: "orders", label: "Orders", Icon: ShoppingBag },
@@ -29,7 +30,7 @@ const TABS = [
 
 export default function AccountPage() {
   const router = useRouter();
-  const { user, myOrders, hydrated, logout, updateProfile } = useAuth();
+  const { user, hydrated, logout, updateProfile } = useAuth();
   const { count: wishlistCount, openWishlist } = useWishlist();
 
   const [tab, setTab] = useState("orders");
@@ -38,6 +39,39 @@ export default function AccountPage() {
   const [editEmail, setEditEmail] = useState("");
   const [saved, setSaved] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [myOrders, setMyOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  /* Fetch real orders from the backend */
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!user) {
+      setOrdersLoading(false);
+      return;
+    }
+
+    let active = true;
+    setOrdersLoading(true);
+    api
+      .getMyOrders()
+      .then((res) => {
+        if (active) {
+          console.log("[account] orders response:", res.data);
+          setMyOrders(res.data.orders || []);
+        }
+      })
+      .catch((err) => {
+        console.error("[account] getMyOrders failed:", err);
+        if (active) setMyOrders([]);
+      })
+      .finally(() => {
+        if (active) setOrdersLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [hydrated, user]);
 
   /* Loading */
   if (!hydrated) {
@@ -201,7 +235,7 @@ export default function AccountPage() {
           <div className="relative grid grid-cols-3 divide-x divide-neutral-200/70 border-t border-neutral-200/70 bg-white/60 backdrop-blur-sm">
             <div className="px-5 py-4 text-center sm:text-left">
               <div className="font-display text-[18px] font-extrabold tabular-nums text-neutral-950">
-                {myOrders.length}
+                {ordersLoading ? "—" : myOrders.length}
               </div>
               <div className="mt-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-neutral-400">
                 Total Orders
@@ -209,7 +243,7 @@ export default function AccountPage() {
             </div>
             <div className="px-5 py-4 text-center sm:text-left">
               <div className="font-display text-[18px] font-extrabold tabular-nums text-neutral-950">
-                {wishlistCount}
+                {ordersLoading ? "—" : wishlistCount}
               </div>
               <div className="mt-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-neutral-400">
                 Saved Items
@@ -217,10 +251,11 @@ export default function AccountPage() {
             </div>
             <div className="px-5 py-4 text-center sm:text-left">
               <div className="font-display text-[18px] font-extrabold tabular-nums text-brand-600">
-                ₹
-                {myOrders
-                  .reduce((s, o) => s + (Number(o.total) || 0), 0)
-                  .toLocaleString()}
+                {ordersLoading
+                  ? "—"
+                  : `₹${myOrders
+                      .reduce((s, o) => s + (Number(o.total) || 0), 0)
+                      .toLocaleString()}`}
               </div>
               <div className="mt-0.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-neutral-400">
                 Total Spent
@@ -260,7 +295,10 @@ export default function AccountPage() {
 
         {/* ═══ Tab content ═══════════════════════════ */}
         <div className="mt-6">
-          {tab === "orders" && <AccountOrders orders={myOrders} />}
+          {/* {tab === "orders" && <AccountOrders orders={myOrders} />} */}
+          {tab === "orders" && (
+            <AccountOrders orders={myOrders} loading={ordersLoading} />
+          )}
 
           {tab === "profile" && (
             <div className="rounded-3xl border border-neutral-200/70 bg-white p-6 sm:p-8">
@@ -291,7 +329,9 @@ export default function AccountPage() {
                     <button
                       onClick={handleSaveProfile}
                       className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold text-white transition-all ${
-                        saved ? "bg-emerald-500" : "bg-neutral-950 hover:bg-brand-500"
+                        saved
+                          ? "bg-emerald-500"
+                          : "bg-neutral-950 hover:bg-brand-500"
                       }`}
                     >
                       {saved ? (
@@ -385,7 +425,14 @@ export default function AccountPage() {
 }
 
 /* ── Small reusable components ──────────────────────── */
-function ProfileField({ label, value, onChange, editing, type = "text", prefix }) {
+function ProfileField({
+  label,
+  value,
+  onChange,
+  editing,
+  type = "text",
+  prefix,
+}) {
   return (
     <div>
       <label className="block text-[10.5px] font-bold uppercase tracking-[0.16em] text-neutral-500">

@@ -62,13 +62,13 @@ export default function FinalCTA() {
 
             {/* CTAs */}
             <div className="mt-9 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
-              <Link
+              {/* <Link
                 href="/menu"
                 className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-neutral-950 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.6)]"
               >
                 Order Now
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </Link>
+              </Link> */}
               <Link
                 href="/menu"
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/30 bg-white/5 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-sm transition-all duration-300 hover:border-white/60 hover:bg-white/10"

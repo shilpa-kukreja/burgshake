@@ -12,11 +12,25 @@ import uploadRoutes from "../routes/upload.routes.js";
 import authRoutes from "../routes/auth.routes.js";
 import wishlistRoutes from "../routes/wishlist.routes.js";
 import { env } from "../config/env.js";
-import Menurouter from "../routes/menu.routes.js";
-import Orderrouter from "../routes/order.routes.js";
+
+import adminMenuRoutes  from "../routes/menu.admin.routes.js";
+import publicMenuRoutes from "../routes/menu.public.routes.js";
 import Contactrouter from "../routes/admin.contact.routes.js";
+import SubmitContactRouter from "../routes/contact.routes.js";
 import adminrouter from "../routes/admin.routes.js";
 import Categoryrouter from "../routes/category.routes.js";
+
+import subscriberRoutes      from "../routes/subscriber.routes.js";
+import adminSubscriberRoutes from "../routes/subscriber.admin.routes.js";
+
+import couponPublicRoutes from "../routes/coupon.public.routes.js";
+import couponAdminRoutes from "../routes/coupon.admin.routes.js";
+
+import Orderrouter from "../routes/order.routes.js";
+import orderAdminRoutes from "../routes/order.admin.routes.js";
+
+import blogPublicRoutes from "../routes/blog.public.routes.js";
+import blogAdminRoutes from "../routes/blog.admin.routes.js";
 
 
 const app = express();
@@ -25,17 +39,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /* Security */
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 app.use(cookieParser());
 
-// app.use(
-//   cors({
-//     origin: env.CLIENT_URL.split(",").map((s) => s.trim()),
-//     credentials: true,
-//   })
-// );
-app.use(cors());
+app.use(
+  cors({
+    origin: env.CLIENT_URL.split(",").map((s) => s.trim()),
+    credentials: true,
+  })
+);
 
 /* Rate Limiting */
 const limiter = rateLimit({
@@ -72,13 +89,32 @@ app.get("/api/health", (req, res) => {
 
 /* Routes */
 app.use("/api/auth", authRoutes);
-app.use("/api/admin", Menurouter);
+
+app.use("/api/menu",  publicMenuRoutes);   // PUBLIC  — no auth
+app.use("/api/admin", adminMenuRoutes);    // ADMIN   — protect + adminOnly
+
+
+
 app.use("/api/admin", adminrouter);
-app.use("/api/orders", Orderrouter);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/contact", Contactrouter);
+app.use("/api/submit/contact",SubmitContactRouter);
 app.use("/api/admin/upload", uploadRoutes);
 app.use("/api/categories", Categoryrouter);
+
+app.use("/api/subscribe",        subscriberRoutes);       // public
+app.use("/api/admin/subscribers", adminSubscriberRoutes); // admin
+
+app.use("/api/coupons", couponPublicRoutes);
+app.use("/api/admin/coupons", couponAdminRoutes);
+
+
+app.use("/api/orders",       Orderrouter);        // public
+app.use("/api/admin/orders", orderAdminRoutes);   // admin
+
+
+app.use("/api/blogs", blogPublicRoutes);        // public
+app.use("/api/admin/blogs", blogAdminRoutes);   // admin
 
 
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo , useEffect} from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Save,
@@ -18,11 +18,10 @@ import {
   Image as ImageIcon,
   Trash2,
   Sparkles,
-  Wand2,
+  Star,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { api } from "../../lib/api";
-
 
 const DIETARY_OPTIONS = [
   { id: "veg", label: "Vegetarian" },
@@ -33,6 +32,7 @@ const DIETARY_OPTIONS = [
 const EMPTY = {
   name: "",
   desc: "",
+  longDesc: "",
   price: "",
   mrp: "",
   img: "",
@@ -40,6 +40,7 @@ const EMPTY = {
   tag: "",
   rating: 4.5,
   reviews: 0,
+  ratingBreakdown: { star5: 0, star4: 0, star3: 0, star2: 0, star1: 0 },
   dietary: [],
   category: "",
   serves: "1 person",
@@ -67,6 +68,11 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
   const [form, setForm] = useState(() => ({
     ...EMPTY,
     ...(initialData || {}),
+    /* Ensure ratingBreakdown is always fully populated */
+    ratingBreakdown: {
+      ...EMPTY.ratingBreakdown,
+      ...(initialData?.ratingBreakdown || {}),
+    },
   }));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -81,6 +87,13 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
     setForm((f) => ({
       ...f,
       nutrition: { ...f.nutrition, [key]: value },
+    }));
+  };
+
+  const updateRating = (key, value) => {
+    setForm((f) => ({
+      ...f,
+      ratingBreakdown: { ...f.ratingBreakdown, [key]: value },
     }));
   };
 
@@ -107,12 +120,38 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
       .replace(/^-|-$/g, "");
   }, [form.name]);
 
+  /* ── Live-computed rating average + total from breakdown ── */
+  const computedRating = useMemo(() => {
+    const rb = form.ratingBreakdown || {};
+    const total =
+      (Number(rb.star5) || 0) +
+      (Number(rb.star4) || 0) +
+      (Number(rb.star3) || 0) +
+      (Number(rb.star2) || 0) +
+      (Number(rb.star1) || 0);
+
+    if (total === 0) {
+      return { average: 0, total: 0 };
+    }
+
+    const sum =
+      (Number(rb.star5) || 0) * 5 +
+      (Number(rb.star4) || 0) * 4 +
+      (Number(rb.star3) || 0) * 3 +
+      (Number(rb.star2) || 0) * 2 +
+      (Number(rb.star1) || 0) * 1;
+
+    return {
+      average: Math.round((sum / total) * 10) / 10,
+      total,
+    };
+  }, [form.ratingBreakdown]);
+
   /* ── Tags (ingredients / allergens) ──────────── */
   const [ingredientInput, setIngredientInput] = useState("");
   const [allergenInput, setAllergenInput] = useState("");
   const [categories, setCategories] = useState([]);
   const [catLoading, setCatLoading] = useState(true);
-
 
   const addIngredient = () => {
     const v = ingredientInput.trim();
@@ -134,7 +173,6 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
   const removeAllergen = (item) =>
     update("allergens", form.allergens.filter((x) => x !== item));
 
-
   useEffect(() => {
     let active = true;
     (async () => {
@@ -143,7 +181,6 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
         if (active) {
           const activeCats = res.data.categories.filter((c) => c.isActive);
           setCategories(activeCats);
-          /* If new item and no category selected, pick first */
           if (!isEdit && activeCats.length > 0 && !form.category) {
             update("category", activeCats[0].slug);
           }
@@ -158,7 +195,6 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
       active = false;
     };
   }, []);
-
 
   /* ── Validation ──────────────────────────────── */
   const validate = () => {
@@ -185,6 +221,7 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
     const payload = {
       name: form.name.trim(),
       desc: form.desc.trim(),
+      longDesc: form.longDesc?.trim() || "",
       price: Number(form.price),
       mrp: form.mrp ? Number(form.mrp) : null,
       img: form.img.trim(),
@@ -192,6 +229,13 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
       tag: form.tag?.trim() || "",
       rating: Number(form.rating) || 4.5,
       reviews: Number(form.reviews) || 0,
+      ratingBreakdown: {
+        star5: Number(form.ratingBreakdown.star5) || 0,
+        star4: Number(form.ratingBreakdown.star4) || 0,
+        star3: Number(form.ratingBreakdown.star3) || 0,
+        star2: Number(form.ratingBreakdown.star2) || 0,
+        star1: Number(form.ratingBreakdown.star1) || 0,
+      },
       dietary: form.dietary,
       category: form.category,
       serves: form.serves || "1 person",
@@ -313,20 +357,87 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
           />
         </div>
 
-        {/* Markdown description */}
+        {/* Short description */}
         <div>
           <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-            Description <span className="text-brand-500">*</span>
+            Short Description <span className="text-brand-500">*</span>
           </label>
           <p className="mt-1 text-[10.5px] text-neutral-400">
-            Supports markdown — **bold**, _italic_, ## headings, - lists
+            Shown on the menu card. Markdown supported.
           </p>
           <MarkdownEditor
             value={form.desc}
             onChange={(v) => update("desc", v)}
             error={errors.desc}
+            rows={4}
+            maxLength={2000}
           />
         </div>
+
+        {/* Long description */}
+        <div>
+          <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+            Long Description
+          </label>
+          <p className="mt-1 text-[10.5px] text-neutral-400">
+            Shown on the product detail page. Markdown supported — **bold**, _italic_, ## headings, - lists
+          </p>
+          <MarkdownEditor
+            value={form.longDesc}
+            onChange={(v) => update("longDesc", v)}
+            rows={10}
+            maxLength={4000}
+          />
+        </div>
+      </Section>
+
+      {/* ═══ RATINGS ═════════════════════════════ */}
+      <Section
+        title="Ratings"
+        subtitle="Per-star review counts — the average is auto-computed"
+      >
+        <div className="grid gap-4 sm:grid-cols-5">
+          {[5, 4, 3, 2, 1].map((n) => (
+            <div key={n}>
+              <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                <span className="inline-flex items-center gap-1">
+                  {n}
+                  <Star className="h-3 w-3 fill-brand-500 text-brand-500" />
+                </span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={form.ratingBreakdown[`star${n}`] ?? 0}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  updateRating(`star${n}`, v === "" ? "" : Math.max(0, Number(v)));
+                }}
+                placeholder="0"
+                className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white py-3 px-4 text-[13.5px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none transition-all focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Live preview of what the customer will see */}
+        <div className="flex items-center gap-3 rounded-2xl border border-neutral-200/70 bg-neutral-50/60 px-4 py-3">
+          <span className="inline-flex items-center gap-1 text-[15px] font-bold text-neutral-900">
+            <Star className="h-4 w-4 fill-brand-500 text-brand-500" />
+            {computedRating.total === 0 ? "—" : computedRating.average.toFixed(1)}
+          </span>
+          <span className="text-[12px] text-neutral-500">
+            {computedRating.total === 0
+              ? "No ratings yet"
+              : `${computedRating.total} total review${computedRating.total === 1 ? "" : "s"}`}
+          </span>
+        </div>
+
+        <p className="text-[10.5px] text-neutral-400">
+          Backend computes <code className="rounded bg-neutral-100 px-1">rating</code> and{" "}
+          <code className="rounded bg-neutral-100 px-1">reviews</code> from these numbers on save. Manual overrides are ignored once at least one count is non-zero.
+        </p>
       </Section>
 
       {/* ═══ PRICING ═════════════════════════════ */}
@@ -542,9 +653,15 @@ export default function MenuItemForm({ initialData = null, mode = "new" }) {
 }
 
 /* ══════════════════════════════════════════════════
-   MARKDOWN EDITOR
+   MARKDOWN EDITOR (now accepts rows + maxLength)
    ══════════════════════════════════════════════════ */
-function MarkdownEditor({ value, onChange, error }) {
+function MarkdownEditor({
+  value,
+  onChange,
+  error,
+  rows = 6,
+  maxLength = 2000,
+}) {
   const taRef = useRef(null);
   const [preview, setPreview] = useState(false);
 
@@ -640,8 +757,8 @@ function MarkdownEditor({ value, onChange, error }) {
         <textarea
           ref={taRef}
           value={value}
-          onChange={(e) => onChange(e.target.value.slice(0, 2000))}
-          rows={6}
+          onChange={(e) => onChange(e.target.value.slice(0, maxLength))}
+          rows={rows}
           placeholder="**Double smashed patty** with aged cheddar, house sauce, and a soft brioche bun."
           className="w-full resize-y border-0 bg-transparent p-4 text-[13.5px] font-medium leading-relaxed text-neutral-900 placeholder:text-neutral-400 outline-none"
         />
@@ -657,7 +774,7 @@ function MarkdownEditor({ value, onChange, error }) {
           </span>
         )}
         <span className="text-[10.5px] font-semibold tabular-nums text-neutral-400">
-          {value.length}/2000
+          {value.length}/{maxLength}
         </span>
       </div>
     </div>

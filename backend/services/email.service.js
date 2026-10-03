@@ -29,7 +29,7 @@ function getTransporter() {
 }
 
 /* ── Base send function ───────────────────────────── */
-async function sendMail({ to, subject, html, text, replyTo }) {
+export async function sendMail({ to, subject, html, text, replyTo }) {
   const t = getTransporter();
 
   if (!t) {
@@ -258,5 +258,94 @@ export async function sendContactAutoReply(contact) {
       bodyHtml,
     }),
     text: `Thanks ${contact.name.split(" ")[0]}! We received your message and will reply soon.`,
+  });
+}
+
+
+/* ═══════════════════════════════════════════════════
+   EMAIL — Welcome email for new subscribers
+   ═══════════════════════════════════════════════════ */
+export async function sendWelcomeEmail(subscriber) {
+  const firstName = (subscriber.name || "").split(" ")[0] || "there";
+
+  const unsubscribeUrl = `${env.CLIENT_URL?.split(",")[0]?.trim() || "http://localhost:3000"}/unsubscribe/${subscriber.unsubscribeToken}`;
+
+  const bodyHtml = `
+    <h1 style="margin:0 0 8px; font-size:22px; font-weight:800; color:#171717; letter-spacing:-0.02em;">
+      Welcome to the table, ${firstName} 🍔
+    </h1>
+    <p style="margin:0 0 20px; font-size:14px; line-height:1.7; color:#525252;">
+      You&apos;re officially on <strong>The Burgshake Letter</strong> — our
+      occasional note about seasonal drops, secret offers, and what&apos;s
+      coming off the grill next.
+    </p>
+
+    <div style="padding:20px; background:#FFF6EC; border-radius:12px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#EA580C; margin-bottom:10px;">
+        What you&apos;ll get
+      </div>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td style="padding:6px 0; font-size:13.5px; color:#404040; line-height:1.6;">
+            🍟 &nbsp;First dibs on limited-run flavours
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0; font-size:13.5px; color:#404040; line-height:1.6;">
+            🎁 &nbsp;Subscriber-only offers (no spam, ever)
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0; font-size:13.5px; color:#404040; line-height:1.6;">
+            🔥 &nbsp;Behind-the-grill stories and kitchen experiments
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:26px;">
+      <tr>
+        <td align="center">
+          <a
+            href="${env.CLIENT_URL?.split(",")[0]?.trim() || "http://localhost:3000"}/menu"
+            style="display:inline-block; padding:13px 26px; background:#171717; color:#ffffff; font-size:13px; font-weight:700; text-decoration:none; border-radius:999px; letter-spacing:-0.01em;"
+          >
+            Browse the menu →
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:28px 0 0; font-size:13px; line-height:1.7; color:#737373;">
+      Hungry now? We&apos;re open every day, 11 AM to 11 PM. Drop by the
+      counter at 12 Linking Road, Bandra West.
+    </p>
+
+    <p style="margin:16px 0 0; font-size:13px; color:#404040;">
+      — The Burgshake Team
+    </p>
+
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:32px; border-top:1px solid #F5E6D3;">
+      <tr>
+        <td style="padding-top:18px; font-size:11px; color:#A3A3A3; line-height:1.6; text-align:center;">
+          Changed your mind?
+          <a href="${unsubscribeUrl}" style="color:#737373; text-decoration:underline;">
+            Unsubscribe in one click
+          </a>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return sendMail({
+    to: subscriber.email,
+    subject: "Welcome to The Burgshake Letter 🍔",
+    html: emailWrapper({
+      title: "Welcome to Burgshake",
+      preheader: "You're on the list — here's what to expect.",
+      bodyHtml,
+    }),
+    text: `Welcome to The Burgshake Letter! You'll get occasional updates on new flavours and offers.\n\nUnsubscribe: ${unsubscribeUrl}`,
+    replyTo: env.EMAIL_USER,
   });
 }

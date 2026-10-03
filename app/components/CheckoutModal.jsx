@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   ArrowLeft,
@@ -21,11 +22,18 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
+  Router,
+  Download,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../lib/api";
+import { loadRazorpayScript, getRazorpayKeyId } from "../lib/razorpay";
+import { generateOrderReceipt } from "../lib/userreceipt";
 
-/* ─── Static data (will move to backend later) ───────── */
+
+/* ─── Static data ───────────────────────────────────── */
 const OUTLETS = [
   {
     id: "bandra",
@@ -39,26 +47,60 @@ const OUTLETS = [
   },
 ];
 
-const PAYMENT_METHODS = [
-  {
+/* Orders of ₹500 or more → must pay online
+   Orders below ₹500 → pay at counter */
+const ONLINE_PAYMENT_THRESHOLD = 500;
+
+const PAYMENT_METHODS = {
+  razorpay: {
     id: "razorpay",
     label: "Pay Online",
     desc: "UPI · Card · Netbanking · Wallet",
     Icon: CreditCard,
   },
-  {
+  counter: {
     id: "counter",
     label: "Pay at Counter",
     desc: "Cash or card when you pick up",
     Icon: Wallet,
   },
+};
+
+const STEPS = [
+  { id: 1, label: "Pickup Details" },
+  { id: 2, label: "Your Info" },
+  { id: 3, label: "Payment" },
 ];
 
-/* Generate time slots 11:00 AM → 10:30 PM in 30-min steps */
+/* ─── Time helpers ─────────────────────────────────── */
+const PREP_BUFFER_MINUTES = 15;
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function toLocalDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+}
+
 function generateTimeSlots() {
   const slots = [];
   for (let h = 11; h <= 22; h++) {
     for (let m = 0; m < 60; m += 30) {
+      if (h === 22 && m > 30) continue;
       const hour12 = h % 12 === 0 ? 12 : h % 12;
       const ampm = h < 12 ? "AM" : "PM";
       const mm = m.toString().padStart(2, "0");
@@ -73,45 +115,94 @@ function generateTimeSlots() {
   return slots;
 }
 
-const STEPS = [
-  { id: 1, label: "Pickup Details" },
-  { id: 2, label: "Your Info" },
-  { id: 3, label: "Payment" },
-];
+function buildDateOptions() {
+  const today = new Date();
+  const options = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const value = toLocalDateStr(d);
 
-/* Fake coupon codes for demo */
-const DEMO_COUPONS = {
-  WELCOME50: { type: "flat", value: 50, min: 200, label: "₹50 off on ₹200+" },
-  TAKE10: { type: "percent", value: 10, min: 300, max: 100, label: "10% off up to ₹100" },
-  FRESH20: { type: "flat", value: 20, min: 150, label: "₹20 off on ₹150+" },
-};
+    let prefix;
+    if (i === 0) prefix = "Today";
+    else if (i === 1) prefix = "Tomorrow";
+    else prefix = WEEKDAYS[d.getDay()];
+
+    options.push({
+      value,
+      label: `${prefix}, ${d.getDate()} ${MONTHS[d.getMonth()]}`,
+      isToday: i === 0,
+    });
+  }
+  return options;
+}
+
+/* Short human label for a coupon chip, e.g. "₹50 off on ₹200+" */
+function couponLabel(c) {
+  if (!c) return "";
+  const val = c.discount;
+  if (c.discounttype === "flat") {
+    return `₹${val} off${c.minPurchaseAmount ? ` on ₹${c.minPurchaseAmount}+` : ""}`;
+  }
+  const cap = c.maxDiscountAmount ? ` up to ₹${c.maxDiscountAmount}` : "";
+  const min = c.minPurchaseAmount ? ` · ₹${c.minPurchaseAmount}+` : "";
+  return `${val}% off${cap}${min}`;
+}
+
+const ALL_TIME_SLOTS = generateTimeSlots();
 
 /* ═══════════════════════════════════════════════════════
    COMPONENT
    ═══════════════════════════════════════════════════════ */
 export default function CheckoutModal({ open, onClose }) {
-  const { items, subtotal, clearCart } = useCart();
+
+const router = useRouter();
+
+ const { items, subtotal, clearCart, closeCart } = useCart();
+ const { closeWishlist } = useWishlist();
+
 
   const [step, setStep] = useState(1);
   const [outlet, setOutlet] = useState("bandra");
-  const [date, setDate] = useState("today");
+  const [date, setDate] = useState(() => toLocalDateStr(new Date()));
   const [timeSlot, setTimeSlot] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
-  const [payment, setPayment] = useState("razorpay");
+  const [payment, setPayment] = useState("counter");
+
+  /* Coupon state */
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // coupon code string
+  const [discount, setDiscount] = useState(0); // ₹ from backend
   const [couponError, setCouponError] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+
   const [showSlots, setShowSlots] = useState(true);
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState(null);
   const { user, addOrder, updateProfile } = useAuth();
 
-  const timeSlots = useMemo(() => generateTimeSlots(), []);
+  const [submitError, setSubmitError] = useState("");
 
-  /* Reset when modal opens */
+  const dateOptions = useMemo(() => buildDateOptions(), [open]);
+
+const [completedOrder, setCompletedOrder] = useState(null);
+  const availableTimeSlots = useMemo(() => {
+    if (!date) return [];
+
+    const todayStr = toLocalDateStr(new Date());
+    if (date !== todayStr) return ALL_TIME_SLOTS;
+
+    const now = new Date();
+    const cutoff = now.getHours() * 60 + now.getMinutes() + PREP_BUFFER_MINUTES;
+
+    return ALL_TIME_SLOTS.filter((s) => s.hour * 60 + s.minute > cutoff);
+  }, [date, open]);
+
+  /* Lock body scroll */
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -123,32 +214,57 @@ export default function CheckoutModal({ open, onClose }) {
     };
   }, [open]);
 
-  /* ── Auto-fill from logged-in user when modal opens ── */
-useEffect(() => {
-  if (!open) return;
+  /* Heal stale date */
+  useEffect(() => {
+    if (!open) return;
+    const todayStr = toLocalDateStr(new Date());
+    if (!date || date < todayStr) {
+      setDate(todayStr);
+      setTimeSlot("");
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Logged-in user → prefill from profile */
-  if (user) {
-    setName((prev) => prev || user.name || "");
-    setPhone((prev) => prev || user.phone || "");
-    setEmail((prev) => prev || user.email || "");
-    return;
-  }
+  /* Prefill from user / last order */
+  useEffect(() => {
+    if (!open) return;
 
-  /* Guest → prefill from their last order */
-  try {
-    const raw = localStorage.getItem("burgshake_last_order");
-    if (!raw) return;
-    const last = JSON.parse(raw);
-    if (!last?.customer) return;
+    if (user) {
+      setName((prev) => prev || user.name || "");
+      setPhone((prev) => prev || user.phone || "");
+      setEmail((prev) => prev || user.email || "");
+      return;
+    }
 
-    setName((prev) => prev || last.customer.name || "");
-    setPhone((prev) => prev || last.customer.phone || "");
-    setEmail((prev) => prev || last.customer.email || "");
-  } catch {}
-}, [open, user]);
+    try {
+      const raw = localStorage.getItem("burgshake_last_order");
+      if (!raw) return;
+      const last = JSON.parse(raw);
+      if (!last?.customer) return;
 
-  /* ESC closes (unless placing order) */
+      setName((prev) => prev || last.customer.name || "");
+      setPhone((prev) => prev || last.customer.phone || "");
+      setEmail((prev) => prev || last.customer.email || "");
+    } catch {}
+  }, [open, user]);
+
+  /* Fetch active coupons when modal opens — for the chips */
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    api
+      .getActiveCoupons()
+      .then((res) => {
+        if (active) setAvailableCoupons(res.data.coupons || []);
+      })
+      .catch(() => {
+        if (active) setAvailableCoupons([]); // non-fatal — chips just don't show
+      });
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
+  /* ESC closes */
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape" && !placing && !orderNumber) {
@@ -159,53 +275,99 @@ useEffect(() => {
     return () => window.removeEventListener("keydown", onKey);
   }, [placing, orderNumber]);
 
-  /* ── Computed ─────────────────────────────────────── */
+
+  const handleDownloadReceipt = () => {
+  if (!completedOrder) return;
+  try {
+    generateOrderReceipt(completedOrder);
+  } catch (err) {
+    console.error("Receipt generation failed:", err);
+    alert("Couldn't generate the receipt. Please try again.");
+  }
+};
+
+  /* Auto re-validate coupon when cart subtotal changes.
+     If the coupon no longer qualifies (e.g. cart dropped below min), remove it. */
+  useEffect(() => {
+    if (!appliedCoupon) return;
+    let active = true;
+    api
+      .applyCoupon(appliedCoupon, subtotal)
+      .then((res) => {
+        if (active) {
+          setDiscount(res.data.discount);
+          setCouponError("");
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setAppliedCoupon(null);
+          setDiscount(0);
+          setCouponError(
+            err.message || "Coupon removed — order no longer qualifies.",
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal]);
+
+  /* ── Computed totals ──────────────────────────────── */
   const tax = Math.round(subtotal * 0.05);
   const gross = subtotal + tax;
-
-  const discount = useMemo(() => {
-    if (!appliedCoupon) return 0;
-    const c = DEMO_COUPONS[appliedCoupon];
-    if (!c) return 0;
-    if (subtotal < c.min) return 0;
-    if (c.type === "flat") return c.value;
-    if (c.type === "percent") {
-      const amt = Math.round((subtotal * c.value) / 100);
-      return c.max ? Math.min(amt, c.max) : amt;
-    }
-    return 0;
-  }, [appliedCoupon, subtotal]);
-
   const total = Math.max(0, gross - discount);
+
+  /* ── Payment method is determined by order total ── */
+  const requiresOnlinePayment = total >= ONLINE_PAYMENT_THRESHOLD;
+  const requiredPayment = requiresOnlinePayment ? "razorpay" : "counter";
+
+  useEffect(() => {
+    setPayment(requiredPayment);
+  }, [requiredPayment]);
 
   /* ── Handlers ─────────────────────────────────────── */
   const handleClose = () => {
     if (placing) return;
     if (orderNumber) {
-      /* After success, closing also resets */
       resetAll();
     }
+    closeCart();
+    closeWishlist();
     onClose();
+    router.push('/account');
   };
 
   const resetAll = () => {
     setStep(1);
     setOutlet("bandra");
-    setDate("today");
+    setDate(toLocalDateStr(new Date()));
     setTimeSlot("");
     setName("");
     setPhone("");
     setEmail("");
     setNotes("");
-    setPayment("razorpay");
+    setPayment("counter");
     setCouponCode("");
     setAppliedCoupon(null);
+    setDiscount(0);
     setCouponError("");
+    setApplying(false);
     setOrderNumber(null);
+    setSubmitError("");
+setCompletedOrder(null);
+  };
+
+  const handleDateChange = (value) => {
+    setDate(value);
+    setTimeSlot("");
+    setShowSlots(true);
   };
 
   const canGoNext = () => {
-    if (step === 1) return outlet && date && timeSlot;
+    if (step === 1)
+      return outlet && date && timeSlot && availableTimeSlots.length > 0;
     if (step === 2)
       return (
         name.trim().length >= 2 &&
@@ -220,117 +382,215 @@ useEffect(() => {
     setStep((s) => Math.min(3, s + 1));
   };
 
-  const prevStep = () => {
-    setStep((s) => Math.max(1, s - 1));
-  };
+  const prevStep = () => setStep((s) => Math.max(1, s - 1));
 
-  const applyCoupon = () => {
+  /* ── Apply coupon via backend ─────────────────────── */
+  const applyCoupon = async () => {
     setCouponError("");
     const code = couponCode.trim().toUpperCase();
     if (!code) {
       setCouponError("Enter a code to continue");
       return;
     }
-    const c = DEMO_COUPONS[code];
-    if (!c) {
-      setCouponError("Invalid coupon code");
+    setApplying(true);
+    try {
+      const res = await api.applyCoupon(code, subtotal);
+      setAppliedCoupon(res.data.coupon.code);
+      setDiscount(res.data.discount);
+      setCouponError("");
+    } catch (err) {
+      setCouponError(err.message || "Invalid coupon code");
       setAppliedCoupon(null);
-      return;
+      setDiscount(0);
+    } finally {
+      setApplying(false);
     }
-    if (subtotal < c.min) {
-      setCouponError(`Minimum order ₹${c.min} required`);
-      setAppliedCoupon(null);
-      return;
-    }
-    setAppliedCoupon(code);
-    setCouponError("");
   };
 
   const removeCoupon = () => {
     setAppliedCoupon(null);
     setCouponCode("");
     setCouponError("");
+    setDiscount(0);
   };
 
-const placeOrder = async () => {
-  setPlacing(true);
+  const selectedDateLabel = useMemo(
+    () => dateOptions.find((o) => o.value === date)?.label || "",
+    [dateOptions, date],
+  );
 
-  /* Simulate network delay — replace with backend call later */
-  await new Promise((r) => setTimeout(r, 1400));
+  const placeOrder = async () => {
+    setPlacing(true);
+    setSubmitError("");
 
-  const num = `BS-${new Date().getFullYear()}-${Math.floor(
-    1000 + Math.random() * 9000
-  )}`;
+    try {
+      /* ── Build payload matching backend expectations ── */
+      const payload = {
+        items: items.map((i) => ({
+          slug: i.slug,
+          name: i.name,
+          price: Number(i.price),
+          qty: Number(i.qty || 1),
+          img: i.img || "",
+          customizations: i.customizations || undefined,
+        })),
+        customer: {
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim().toLowerCase(),
+        },
+        outlet, // "bandra" — string, backend accepts
+        date, // "2026-09-23" ISO — backend accepts
+        timeSlot,
+        timeSlotLabel:
+          ALL_TIME_SLOTS.find((s) => s.value === timeSlot)?.label || "",
+        payment,
+        notes: notes.slice(0, 500),
+        couponCode: appliedCoupon || undefined,
+      };
 
-  /* ═══ BUILD ORDER SNAPSHOT ═══════════════════════ */
-  const orderSnapshot = {
-    orderNumber: num,
-    placedAt: new Date().toISOString(),
-    items: items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      price: i.price,
-      qty: i.qty || 1,
-      img: i.img,
-    })),
-    subtotal,
-    tax,
-    discount,
-    couponCode: appliedCoupon,
-    total,
-    outlet: selectedOutlet,
-    date,
-    timeSlot,
-    timeSlotLabel: timeSlots.find((s) => s.value === timeSlot)?.label,
-    customer: { name, phone, email },
-    notes,
-    payment,
-    paymentLabel: payment === "razorpay" ? "Paid Online" : "Pay at Counter",
-  };
+      /* ── Create order on the backend ── */
+      const res = await api.createOrder(payload);
+      const createdOrder = res.data.order;
 
-  /* ═══ SAVE FOR /order-success PAGE (optional) ════ */
-  try {
-    localStorage.setItem(
-      "burgshake_last_order",
-      JSON.stringify(orderSnapshot)
-    );
-  } catch (e) {
-    console.error("Save order snapshot error:", e);
-  }
+      /* ═══ COUNTER PAYMENT — done ═══════════════════ */
+      if (payment === "counter") {
+        finalizeOrder(createdOrder);
+        return;
+      }
 
-  /* ═══ SAVE TO ORDER HISTORY → shows in /account ══ */
-  addOrder({
-    ...orderSnapshot,
-    id: orderSnapshot.orderNumber,
-    customer: {
-      name,
-      phone,
-      email: email || user?.email || "guest@burgshake.com",
-    },
-  });
+      /* ═══ RAZORPAY — open checkout ════════════════ */
+      const scriptOk = await loadRazorpayScript();
+      if (!scriptOk) {
+        setSubmitError(
+          "Couldn't load payment gateway. Please check your connection and try again.",
+        );
+        setPlacing(false);
+        return;
+      }
 
-  /* ═══ SAVE DETAILS BACK TO USER PROFILE ══════════ */
-  if (user && updateProfile) {
-    const patch = {};
-    if (name.trim().length >= 2 && name.trim() !== user.name)
-      patch.name = name.trim();
-    if (/^\d{10}$/.test(phone) && phone !== user.phone)
-      patch.phone = phone;
-    if (/^\S+@\S+\.\S+$/.test(email) && email !== user.email)
-      patch.email = email.toLowerCase();
+      const razorpayOrder = res.data.razorpay;
+      const key = getRazorpayKeyId();
+      if (!key) {
+        setSubmitError(
+          "Payment gateway is not configured. Please contact support.",
+        );
+        setPlacing(false);
+        return;
+      }
 
-    if (Object.keys(patch).length > 0) {
-      updateProfile(patch);
+      const rzp = new window.Razorpay({
+        key,
+        amount: razorpayOrder.amount, // in paise, from backend
+        currency: razorpayOrder.currency, // "INR"
+        name: "Burgshake",
+        description: `Order ${createdOrder.orderNumber}`,
+        order_id: razorpayOrder.orderId,
+        prefill: {
+          name: name.trim(),
+          email: email.trim(),
+          contact: phone.trim(),
+        },
+        notes: { orderNumber: createdOrder.orderNumber },
+        theme: { color: "#F97316" },
+
+        /* Success — verify on the server */
+        handler: async (response) => {
+          try {
+            await api.verifyOrderPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            finalizeOrder(createdOrder);
+          } catch (err) {
+            setSubmitError(
+              err.message ||
+                "Payment verification failed. Your money is safe — please contact support with your order number.",
+            );
+            setPlacing(false);
+          }
+        },
+
+        /* User closed the modal without paying */
+        modal: {
+          ondismiss: () => {
+            setSubmitError(
+              "Payment cancelled. Your order is saved as pending — retry anytime.",
+            );
+            setPlacing(false);
+          },
+        },
+      });
+
+      /* If the SDK itself throws (bad config, network) */
+      rzp.on?.("payment.failed", (resp) => {
+        setSubmitError(
+          resp?.error?.description ||
+            "Payment failed. Please try a different method.",
+        );
+        setPlacing(false);
+      });
+
+      rzp.open();
+      /* Don't setPlacing(false) here — the handler/ondismiss callbacks do that */
+    } catch (err) {
+      setSubmitError(
+        err.message || "Couldn't place your order. Please try again.",
+      );
+      setPlacing(false);
     }
-  }
+  };
 
-  /* ═══ UPDATE UI ══════════════════════════════════ */
-  setOrderNumber(num);
-  setPlacing(false);
+  const finalizeOrder = (order) => {
+    /* Update local history — user sees it in /account immediately */
+    addOrder({
+      ...order,
+      id: order.orderNumber,
+    });
 
-  /* In production: only clear cart on successful Razorpay verify */
-  clearCart();
-};
+    /* If logged in, best-effort profile sync (fire and forget) */
+    if (user && updateProfile) {
+      const patch = {};
+      if (name.trim().length >= 2 && name.trim() !== user.name)
+        patch.name = name.trim();
+      if (/^\d{10}$/.test(phone) && phone !== user.phone) patch.phone = phone;
+      if (/^\S+@\S+\.\S+$/.test(email) && email !== user.email)
+        patch.email = email.toLowerCase();
+      if (Object.keys(patch).length > 0) updateProfile(patch);
+    }
+
+    /* Remember last order details for prefill on the next checkout */
+    try {
+      localStorage.setItem(
+        "burgshake_last_order",
+        JSON.stringify({
+          orderNumber: order.orderNumber,
+          placedAt: order.createdAt || new Date().toISOString(),
+          items: order.items,
+          subtotal: order.subtotal,
+          tax: order.tax,
+          discount: order.discount,
+          couponCode: order.couponCode,
+          total: order.total,
+          outlet: order.pickup,
+          customer: order.customer,
+          payment: order.payment,
+        }),
+      );
+    } catch (e) {
+      console.error("Snapshot save failed:", e);
+    }
+
+   /* Snapshot the whole order before the cart clears —
+     everything cart-derived will be zeroed out a tick from now */
+  setCompletedOrder(order);
+
+    /* Show success screen + clear cart */
+    setOrderNumber(order.orderNumber);
+    setPlacing(false);
+    clearCart();
+  };
 
   if (!open) return null;
 
@@ -343,7 +603,6 @@ const placeOrder = async () => {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-950/60 p-4 backdrop-blur-sm">
         <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)]">
-          {/* Success header */}
           <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-600 px-6 py-10 text-center text-white">
             <div
               aria-hidden="true"
@@ -362,7 +621,6 @@ const placeOrder = async () => {
             </div>
           </div>
 
-          {/* Order number */}
           <div className="px-6 py-5 text-center">
             <div className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-neutral-400">
               Order Number
@@ -372,7 +630,6 @@ const placeOrder = async () => {
             </div>
           </div>
 
-          {/* Pickup info */}
           <div className="mx-6 mb-5 space-y-3 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
             <div className="flex items-start gap-3">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
@@ -398,24 +655,22 @@ const placeOrder = async () => {
                   Ready by
                 </div>
                 <div className="mt-1 text-[13px] font-bold text-neutral-900">
-                  {date === "today" ? "Today" : "Tomorrow"},{" "}
-                  {timeSlots.find((s) => s.value === timeSlot)?.label}
+                  {selectedDateLabel},{" "}
+                  {ALL_TIME_SLOTS.find((s) => s.value === timeSlot)?.label}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Total paid */}
           <div className="mx-6 mb-6 flex items-baseline justify-between border-t border-neutral-200/70 pt-4">
             <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-              {payment === "razorpay" ? "Paid" : "Pay at counter"}
-            </span>
+  {completedOrder?.payment === "razorpay" ? "Paid" : "Pay at counter"}
+</span>
             <span className="font-display text-[20px] font-extrabold text-neutral-950">
-              ₹{total}
-            </span>
+  ₹{completedOrder?.total ?? 0}
+</span>
           </div>
 
-          {/* Show at counter note */}
           <div className="mx-6 mb-6 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/70 p-3.5">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <p className="text-[12px] leading-[1.55] text-amber-800">
@@ -425,15 +680,23 @@ const placeOrder = async () => {
             </p>
           </div>
 
-          {/* Done button */}
-          <div className="px-6 pb-6">
-            <button
-              onClick={handleClose}
-              className="w-full rounded-full bg-neutral-950 px-6 py-3.5 text-[13.5px] font-bold text-white transition-all duration-300 hover:bg-brand-500"
-            >
-              Done
-            </button>
-          </div>
+          <div className="space-y-2.5 px-6 pb-6">
+  <button
+    type="button"
+    onClick={handleDownloadReceipt}
+    className="group flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3.5 text-[13.5px] font-bold text-neutral-800 transition-all duration-300 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700"
+  >
+    <Download className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
+    Download Receipt
+  </button>
+
+  <button
+    onClick={handleClose}
+    className="w-full rounded-full bg-neutral-950 px-6 py-3.5 text-[13.5px] font-bold text-white transition-all duration-300 hover:bg-brand-500"
+  >
+    Done
+  </button>
+</div>
         </div>
       </div>
     );
@@ -450,14 +713,6 @@ const placeOrder = async () => {
         aria-label="Checkout"
         className="relative flex h-full max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-[#FDFCFB] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)] lg:h-auto"
       >
-        {/* Warm glow */}
-        {/* <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
-        >
-          <div className="absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[radial-gradient(circle,_rgba(249,115,22,0.14)_0%,_transparent_65%)]" />
-        </div> */}
-
         {/* ═══ HEADER ═══════════════════════════════ */}
         <header className="relative flex shrink-0 items-center justify-between gap-4 border-b border-neutral-200/70 px-5 py-4 sm:px-7 sm:py-5">
           <div className="min-w-0 flex-1">
@@ -494,8 +749,8 @@ const placeOrder = async () => {
                         done
                           ? "bg-emerald-500 text-white"
                           : active
-                          ? "bg-neutral-950 text-white ring-4 ring-neutral-950/10"
-                          : "bg-neutral-200 text-neutral-500"
+                            ? "bg-neutral-950 text-white ring-4 ring-neutral-950/10"
+                            : "bg-neutral-200 text-neutral-500"
                       }`}
                     >
                       {done ? (
@@ -509,8 +764,8 @@ const placeOrder = async () => {
                         active
                           ? "text-neutral-900"
                           : done
-                          ? "text-emerald-600"
-                          : "text-neutral-400"
+                            ? "text-emerald-600"
+                            : "text-neutral-400"
                       }`}
                     >
                       {s.label}
@@ -533,13 +788,11 @@ const placeOrder = async () => {
         {/* ═══ BODY ════════════════════════════════ */}
         <div className="relative flex-1 overflow-y-auto">
           <div className="grid lg:grid-cols-12">
-
             {/* ── LEFT: Step content ────────────── */}
             <div className="p-5 sm:p-7 lg:col-span-7">
               {/* ═══ STEP 1: Pickup ═══════════ */}
               {step === 1 && (
                 <div className="space-y-6">
-                  {/* Outlet */}
                   <div>
                     <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                       <MapPin className="h-3 w-3" />
@@ -583,93 +836,92 @@ const placeOrder = async () => {
                     </div>
                   </div>
 
-                  {/* Date */}
                   <div>
                     <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                       <Calendar className="h-3 w-3" />
                       Pickup Date
                     </label>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      {[
-                        { id: "today", label: "Today", sub: "Fastest option" },
-                        { id: "tomorrow", label: "Tomorrow", sub: "Pre-order" },
-                      ].map((d) => (
-                        <button
-                          key={d.id}
-                          onClick={() => {
-                            setDate(d.id);
-                            setTimeSlot("");
-                          }}
-                          className={`flex flex-col items-start rounded-2xl border px-4 py-3 text-left transition-all duration-300 ${
-                            date === d.id
-                              ? "border-brand-500 bg-brand-50/60"
-                              : "border-neutral-200 bg-white hover:border-brand-200"
-                          }`}
-                        >
-                          <span
-                            className={`text-[13px] font-bold ${
-                              date === d.id
-                                ? "text-brand-700"
-                                : "text-neutral-800"
-                            }`}
-                          >
-                            {d.label}
-                          </span>
-                          <span className="mt-0.5 text-[10.5px] font-medium text-neutral-500">
-                            {d.sub}
-                          </span>
-                        </button>
-                      ))}
+                    <div className="relative mt-3">
+                      <Calendar className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                      <select
+                        value={date}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        className="w-full appearance-none rounded-2xl border border-neutral-200 bg-white py-3.5 pl-11 pr-11 text-[14px] font-semibold text-neutral-900 outline-none transition-all duration-300 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+                      >
+                        {dateOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
                     </div>
+                    <p className="mt-2 text-[10.5px] font-medium text-neutral-400">
+                      Orders can be scheduled up to 7 days in advance.
+                    </p>
                   </div>
 
-                  {/* Time slots */}
-                  <div>
-                    <button
-                      onClick={() => setShowSlots((v) => !v)}
-                      className="flex w-full items-center justify-between"
-                    >
-                      <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-                        <Clock className="h-3 w-3" />
-                        Pickup Time
-                      </span>
-                      {showSlots ? (
-                        <ChevronUp className="h-3.5 w-3.5 text-neutral-400" />
-                      ) : (
-                        <ChevronDown className="h-3.5 w-3.5 text-neutral-400" />
+                  {date && (
+                    <div>
+                      <button
+                        onClick={() => setShowSlots((v) => !v)}
+                        className="flex w-full items-center justify-between"
+                      >
+                        <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+                          <Clock className="h-3 w-3" />
+                          Pickup Time
+                        </span>
+                        {showSlots ? (
+                          <ChevronUp className="h-3.5 w-3.5 text-neutral-400" />
+                        ) : (
+                          <ChevronDown className="h-3.5 w-3.5 text-neutral-400" />
+                        )}
+                      </button>
+
+                      {showSlots && (
+                        <>
+                          {availableTimeSlots.length === 0 ? (
+                            <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5">
+                              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                              <p className="text-[12px] leading-[1.55] text-amber-800">
+                                <strong className="font-bold">
+                                  No slots left for today.
+                                </strong>{" "}
+                                Please pick another date above.
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="mt-3 grid max-h-56 grid-cols-3 gap-2 overflow-y-auto rounded-2xl border border-neutral-200/70 bg-white p-3 sm:grid-cols-4">
+                                {availableTimeSlots.map((slot) => (
+                                  <button
+                                    key={slot.value}
+                                    onClick={() => setTimeSlot(slot.value)}
+                                    className={`rounded-xl border px-2 py-2 text-[12px] font-bold tabular-nums transition-all duration-200 ${
+                                      timeSlot === slot.value
+                                        ? "border-brand-500 bg-brand-500 text-white shadow-[0_8px_20px_-10px_rgba(249,115,22,0.6)]"
+                                        : "border-neutral-200 bg-white text-neutral-700 hover:border-brand-300 hover:text-brand-600"
+                                    }`}
+                                  >
+                                    {slot.label}
+                                  </button>
+                                ))}
+                              </div>
+                              <p className="mt-2 text-[10.5px] font-medium text-neutral-400">
+                                Kitchen closes at 10:30 PM
+                              </p>
+                            </>
+                          )}
+                        </>
                       )}
-                    </button>
-
-                    {showSlots && (
-                      <>
-                        <div className="mt-3 grid max-h-56 grid-cols-3 gap-2 overflow-y-auto rounded-2xl border border-neutral-200/70 bg-white p-3 sm:grid-cols-4">
-                          {timeSlots.map((slot) => (
-                            <button
-                              key={slot.value}
-                              onClick={() => setTimeSlot(slot.value)}
-                              className={`rounded-xl border px-2 py-2 text-[12px] font-bold tabular-nums transition-all duration-200 ${
-                                timeSlot === slot.value
-                                  ? "border-brand-500 bg-brand-500 text-white shadow-[0_8px_20px_-10px_rgba(249,115,22,0.6)]"
-                                  : "border-neutral-200 bg-white text-neutral-700 hover:border-brand-300 hover:text-brand-600"
-                              }`}
-                            >
-                              {slot.label}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="mt-2 text-[10.5px] font-medium text-neutral-400">
-                          Kitchen closes at 10:30 PM
-                        </p>
-                      </>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* ═══ STEP 2: Your Info ═══════ */}
               {step === 2 && (
                 <div className="space-y-5">
-                  {/* Name */}
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                       Full Name
@@ -686,7 +938,6 @@ const placeOrder = async () => {
                     </div>
                   </div>
 
-                  {/* Phone */}
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                       Phone Number
@@ -701,13 +952,18 @@ const placeOrder = async () => {
                         inputMode="numeric"
                         value={phone}
                         onChange={(e) =>
-                          setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                          setPhone(
+                            e.target.value.replace(/\D/g, "").slice(0, 10),
+                          )
                         }
                         placeholder="98765 43210"
                         className="w-full rounded-2xl border border-neutral-200 bg-white py-3.5 pl-[88px] pr-4 text-[14px] font-medium tabular-nums text-neutral-900 placeholder:text-neutral-400 outline-none transition-all duration-300 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
                       />
                       {phone.length === 10 && (
-                        <Check className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" strokeWidth={3} />
+                        <Check
+                          className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500"
+                          strokeWidth={3}
+                        />
                       )}
                     </div>
                     <p className="mt-2 text-[10.5px] font-medium text-neutral-400">
@@ -715,7 +971,6 @@ const placeOrder = async () => {
                     </p>
                   </div>
 
-                  {/* Email */}
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                       Email Address
@@ -735,11 +990,12 @@ const placeOrder = async () => {
                     </p>
                   </div>
 
-                  {/* Special instructions */}
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                       Special Instructions{" "}
-                      <span className="font-medium text-neutral-400">(optional)</span>
+                      <span className="font-medium text-neutral-400">
+                        (optional)
+                      </span>
                     </label>
                     <div className="relative mt-2.5">
                       <MessageSquare className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-neutral-400" />
@@ -756,7 +1012,6 @@ const placeOrder = async () => {
                     </div>
                   </div>
 
-                  {/* Info note */}
                   <div className="flex items-start gap-2.5 rounded-2xl border border-brand-100 bg-brand-50/50 p-3.5">
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
                     <p className="text-[11.5px] leading-[1.6] text-brand-800">
@@ -770,57 +1025,75 @@ const placeOrder = async () => {
               {/* ═══ STEP 3: Payment ═════════ */}
               {step === 3 && (
                 <div className="space-y-6">
-                  {/* Payment methods */}
+                  {submitError && (
+                    <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50/70 px-4 py-3">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                      <p className="text-[12.5px] font-medium text-red-700">
+                        {submitError}
+                      </p>
+                    </div>
+                  )}
+                  {/* Payment method — auto-selected by order total */}
                   <div>
                     <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                       <CreditCard className="h-3 w-3" />
                       Payment Method
                     </label>
-                    <div className="mt-3 space-y-2.5">
-                      {PAYMENT_METHODS.map(({ id, label, desc, Icon }) => (
-                        <button
-                          key={id}
-                          onClick={() => setPayment(id)}
-                          className={`flex w-full items-center gap-3.5 rounded-2xl border p-4 text-left transition-all duration-300 ${
-                            payment === id
-                              ? "border-brand-500 bg-brand-50/60 shadow-[0_10px_26px_-14px_rgba(249,115,22,0.5)]"
-                              : "border-neutral-200 bg-white hover:border-brand-200"
-                          }`}
-                        >
-                          <span
-                            className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors ${
-                              payment === id
-                                ? "bg-brand-500 text-white"
-                                : "bg-neutral-100 text-neutral-600"
-                            }`}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-display text-[14px] font-bold text-neutral-950">
-                              {label}
-                            </div>
-                            <div className="mt-0.5 text-[11.5px] text-neutral-500">
-                              {desc}
+
+                    {(() => {
+                      const method = PAYMENT_METHODS[requiredPayment];
+                      const { Icon } = method;
+
+                      return (
+                        <div className="mt-3 rounded-2xl border border-brand-500 bg-brand-50/60 p-4 shadow-[0_10px_26px_-14px_rgba(249,115,22,0.5)]">
+                          <div className="flex items-start gap-3.5">
+                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500 text-white">
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-display text-[14px] font-bold text-neutral-950">
+                                  {method.label}
+                                </span>
+                                <span className="rounded-full bg-brand-500 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-white">
+                                  {requiresOnlinePayment
+                                    ? "Required"
+                                    : "Available"}
+                                </span>
+                              </div>
+                              <div className="mt-0.5 text-[11.5px] text-neutral-600">
+                                {method.desc}
+                              </div>
                             </div>
                           </div>
-                          <span
-                            className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-all ${
-                              payment === id
-                                ? "border-brand-500 bg-brand-500"
-                                : "border-neutral-300 bg-white"
-                            }`}
-                          >
-                            {payment === id && (
-                              <span className="h-1.5 w-1.5 rounded-full bg-white" />
+
+                          <div className="mt-3 border-t border-brand-200/60 pt-3 text-[11px] leading-[1.6] text-brand-800">
+                            {requiresOnlinePayment ? (
+                              <>
+                                Orders of{" "}
+                                <strong className="font-bold">
+                                  ₹{ONLINE_PAYMENT_THRESHOLD} or more
+                                </strong>{" "}
+                                must be paid online before pickup. You&apos;ll
+                                be redirected to a secure Razorpay window.
+                              </>
+                            ) : (
+                              <>
+                                Orders below{" "}
+                                <strong className="font-bold">
+                                  ₹{ONLINE_PAYMENT_THRESHOLD}
+                                </strong>{" "}
+                                can be paid in cash or by card when you collect
+                                your order.
+                              </>
                             )}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
-                  {/* Coupon */}
+                  {/* Coupon — same in both payment modes */}
                   <div>
                     <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                       <Tag className="h-3 w-3" />
@@ -828,7 +1101,7 @@ const placeOrder = async () => {
                     </label>
 
                     {appliedCoupon ? (
-                      /* Applied state */
+                      /* Applied */
                       <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-100 text-emerald-600">
@@ -851,26 +1124,43 @@ const placeOrder = async () => {
                         </button>
                       </div>
                     ) : (
-                      /* Input state */
                       <>
+                        {/* Input row */}
                         <div className="mt-3 flex gap-2">
                           <input
                             type="text"
                             value={couponCode}
-                            onChange={(e) =>
-                              setCouponCode(e.target.value.toUpperCase())
-                            }
-                            placeholder="WELCOME50"
-                            className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-3.5 text-[13.5px] font-bold uppercase tracking-[0.1em] text-neutral-900 placeholder:text-neutral-300 outline-none transition-all duration-300 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+                            onChange={(e) => {
+                              setCouponCode(e.target.value.toUpperCase());
+                              if (couponError) setCouponError("");
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !applying) {
+                                e.preventDefault();
+                                applyCoupon();
+                              }
+                            }}
+                            disabled={applying}
+                            placeholder="Enter code"
+                            className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-3.5 text-[13.5px] font-bold uppercase tracking-[0.1em] text-neutral-900 placeholder:text-neutral-300 placeholder:font-medium placeholder:tracking-normal outline-none transition-all duration-300 focus:border-brand-400 focus:ring-4 focus:ring-brand-100 disabled:opacity-60"
                           />
                           <button
                             onClick={applyCoupon}
-                            className="shrink-0 rounded-2xl bg-neutral-950 px-5 text-[12.5px] font-bold text-white transition-all duration-300 hover:bg-brand-500"
+                            disabled={applying || !couponCode.trim()}
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl bg-neutral-950 px-5 text-[12.5px] font-bold text-white transition-all duration-300 hover:bg-brand-500 disabled:cursor-not-allowed disabled:bg-neutral-300"
                           >
-                            Apply
+                            {applying ? (
+                              <>
+                                <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                Checking
+                              </>
+                            ) : (
+                              "Apply"
+                            )}
                           </button>
                         </div>
 
+                        {/* Error */}
                         {couponError && (
                           <div className="mt-2.5 flex items-center gap-2 text-[11.5px] font-semibold text-red-600">
                             <AlertCircle className="h-3.5 w-3.5" />
@@ -878,33 +1168,32 @@ const placeOrder = async () => {
                           </div>
                         )}
 
-                        {/* Available demo coupons */}
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {Object.entries(DEMO_COUPONS).map(([code, c]) => (
-                            <button
-                              key={code}
-                              onClick={() => {
-                                setCouponCode(code);
-                                setCouponError("");
-                              }}
-                              className="rounded-full border border-dashed border-neutral-300 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500 transition-all hover:border-brand-400 hover:text-brand-600"
-                            >
-                              {code}
-                            </button>
-                          ))}
-                        </div>
+                        {/* Available coupon chips from backend */}
+                        {availableCoupons.length > 0 && (
+                          <div className="mt-3">
+                            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+                              Available offers
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {availableCoupons.map((c) => (
+                                <button
+                                  key={c._id || c.couponCode}
+                                  onClick={() => {
+                                    setCouponCode(c.couponCode);
+                                    setCouponError("");
+                                  }}
+                                  title={couponLabel(c)}
+                                  className="group/chip inline-flex items-center gap-1.5 rounded-full border border-dashed border-neutral-300 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-500 transition-all hover:border-brand-400 hover:bg-brand-50/60 hover:text-brand-600"
+                                >
+                                  <Tag className="h-2.5 w-2.5" />
+                                  {c.couponCode}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex items-start gap-2.5 rounded-2xl border border-neutral-200/70 bg-white/70 p-3.5">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
-                    <p className="text-[11.5px] leading-[1.6] text-neutral-600">
-                      {payment === "razorpay"
-                        ? "You'll be redirected to a secure Razorpay window to complete payment."
-                        : "Please pay in cash or by card at the counter when you collect your order."}
-                    </p>
                   </div>
                 </div>
               )}
@@ -922,11 +1211,14 @@ const placeOrder = async () => {
                   </span>
                 </div>
 
-                {/* Items */}
                 <ul className="mt-4 max-h-56 space-y-3 overflow-y-auto pr-1">
                   {items.map((item) => (
                     <li
-                      key={item.id}
+                      key={`${item.slug}__${
+                        item.customizations
+                          ? JSON.stringify(item.customizations)
+                          : ""
+                      }`}
                       className="flex items-center gap-3 rounded-2xl border border-neutral-200/70 bg-white p-2.5"
                     >
                       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
@@ -944,6 +1236,17 @@ const placeOrder = async () => {
                         <div className="truncate text-[12.5px] font-bold text-neutral-900">
                           {item.name}
                         </div>
+                        {item.customizations && (
+                          <div className="mt-0.5 truncate text-[10.5px] font-medium text-neutral-500">
+                            {[
+                              item.customizations.bun,
+                              item.customizations.patty,
+                              ...(item.customizations.extras || []),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+                        )}
                         <div className="mt-0.5 text-[10.5px] font-medium text-neutral-400">
                           ₹{item.price} × {item.qty || 1}
                         </div>
@@ -955,7 +1258,6 @@ const placeOrder = async () => {
                   ))}
                 </ul>
 
-                {/* Totals */}
                 <div className="mt-5 space-y-2.5 border-t border-neutral-300/50 pt-5">
                   <div className="flex items-center justify-between text-[12.5px]">
                     <span className="text-neutral-500">Subtotal</span>
@@ -988,13 +1290,14 @@ const placeOrder = async () => {
                   </div>
                 </div>
 
-                {/* Trust note */}
                 <div className="mt-5 flex items-center gap-2 rounded-xl border border-neutral-200/70 bg-white/60 px-3 py-2.5">
                   <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600">
                     <Check className="h-3 w-3" strokeWidth={3} />
                   </span>
                   <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-neutral-600">
-                    Secure · Razorpay · SSL
+                    {payment === "razorpay"
+                      ? "Secure · Razorpay · SSL"
+                      : "Pay cash or card at pickup"}
                   </span>
                 </div>
               </div>
