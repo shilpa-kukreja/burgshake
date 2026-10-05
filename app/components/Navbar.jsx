@@ -12,7 +12,7 @@ import {
   Sandwich,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { Heart } from "lucide-react";  // add to existing lucide import
+import { Heart } from "lucide-react"; // add to existing lucide import
 import { useWishlist } from "../context/WishlistContext";
 import { User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -42,22 +42,26 @@ export default function Navbar() {
   /* Lock body scroll when mobile drawer is open */
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
   const solid = scrolled || open;
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${solid
-        ? "bg-white/85 shadow-[0_6px_30px_-12px_rgba(249,115,22,0.35)] backdrop-blur-xl"
-        : "bg-white shadow-sm backdrop-blur-none"
-        }`}
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+        solid
+          ? "bg-white/85 shadow-[0_6px_30px_-12px_rgba(249,115,22,0.35)] backdrop-blur-xl"
+          : "bg-white shadow-sm backdrop-blur-none"
+      }`}
     >
       {/* ── Announcement strip ───────────────────────────── */}
       <div
-        className={`overflow-hidden bg-gradient-to-r from-brand-600 via-brand-500 to-brand-600 text-white transition-all duration-300 ${scrolled ? "max-h-0 opacity-0" : "max-h-12 opacity-100"
-          }`}
+        className={`overflow-hidden bg-gradient-to-r from-brand-600 via-brand-500 to-brand-600 text-white transition-all duration-300 ${
+          scrolled ? "max-h-0 opacity-0" : "max-h-12 opacity-100"
+        }`}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-[11px] font-semibold tracking-wide sm:text-xs">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
@@ -68,14 +72,12 @@ export default function Navbar() {
       {/* ── Main bar ─────────────────────────────────────── */}
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="group flex shrink-0 items-center gap-2.5">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-lg shadow-brand-500/30 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105">
-            <Sandwich className="h-5 w-5 text-white" strokeWidth={2.5} />
-          </span>
-          <span className="font-display text-xl font-extrabold tracking-tight sm:text-2xl">
-            <span className="text-neutral-900">Burg</span>
-            <span className="text-brand-500">shake</span>
-          </span>
+        <Link href="/" className="group flex shrink-0 items-center">
+          <img
+            src="/logo.png"
+            alt="Burgshake"
+            className="h-15 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+          />
         </Link>
 
         {/* Desktop nav */}
@@ -172,8 +174,9 @@ export default function Navbar() {
 
       {/* ── Mobile drawer ────────────────────────────────── */}
       <div
-        className={`overflow-hidden border-t border-neutral-100 bg-white transition-all duration-300 lg:hidden ${open ? "max-h-[520px] opacity-100" : "max-h-0 opacity-0"
-          }`}
+        className={`overflow-hidden border-t border-neutral-100 bg-white transition-all duration-300 lg:hidden ${
+          open ? "max-h-[520px] opacity-100" : "max-h-0 opacity-0"
+        }`}
       >
         <div className="space-y-1 px-4 pb-6 pt-3">
           {NAV_LINKS.map((link) => (

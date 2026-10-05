@@ -1,48 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, ArrowRight, Check, AlertCircle } from "lucide-react";
+import { Mail, ArrowRight, Check, AlertCircle, Info } from "lucide-react";
 import { api } from "../lib/api";
 
 export default function Subscribe() {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState("idle"); // idle | new | existing
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  const trimmed = email.trim();
-  if (!trimmed) return;
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) return;
 
-  setLoading(true);
-  setError("");
-  try {
-    await api.subscribe(trimmed);
-    setSubmitted(true);
-    setEmail("");
-    setTimeout(() => setSubmitted(false), 2500);
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await api.subscribe(trimmed);
+
+      /* Backend tells us which case it was:
+         - "You're on the list!"        → brand new subscriber
+         - "You're already subscribed!" → email was already in the list */
+      const message = res?.message || "";
+      const isExisting = /already/i.test(message);
+
+      setStatus(isExisting ? "existing" : "new");
+      setEmail("");
+      setTimeout(() => setStatus("idle"), 3000);
+    } catch (err) {
+      setError(err.message || "Couldn't subscribe. Try again?");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="relative overflow-hidden bg-white py-14 sm:py-16">
-      {/* Warm glow */}
-      {/* <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-      >
-        <div className="absolute -right-40 top-1/2 h-[380px] w-[380px] -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(249,115,22,0.12)_0%,_transparent_65%)]" />
-        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#FDFCFB] to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#FDFCFB] to-transparent" />
-      </div> */}
-
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
         <div className="relative flex flex-col items-start justify-between gap-6 rounded-2xl border border-neutral-200/70 bg-white/80 p-6 shadow-[0_1px_2px_rgba(23,23,23,0.03),0_20px_50px_-30px_rgba(249,115,22,0.35)] backdrop-blur-sm sm:p-7 lg:flex-row lg:items-center lg:gap-10">
-
           {/* ── LEFT: Copy ─────────────────────────── */}
           <div className="flex-1">
             <div className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">
@@ -69,7 +67,6 @@ export default function Subscribe() {
             className="w-full shrink-0 sm:w-auto lg:w-[380px]"
           >
             <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-              {/* Input */}
               <div className="relative flex-1">
                 <Mail className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" />
                 <input
@@ -79,6 +76,7 @@ export default function Subscribe() {
                   onChange={(e) => {
                     setEmail(e.target.value);
                     if (error) setError("");
+                    if (status !== "idle") setStatus("idle");
                   }}
                   disabled={loading}
                   placeholder="your@email.com"
@@ -87,26 +85,32 @@ export default function Subscribe() {
                 />
               </div>
 
-              {/* Button */}
               <button
                 type="submit"
                 aria-label="Subscribe"
-                disabled={loading}
+                disabled={loading || status !== "idle"}
                 className={`group inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full px-5 py-3 text-[13px] font-bold shadow-[0_10px_26px_-12px_rgba(249,115,22,0.6)] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-80 ${
-                  submitted
+                  status === "new"
                     ? "bg-emerald-500 text-white"
-                    : "bg-neutral-950 text-white hover:-translate-y-0.5 hover:bg-brand-500 hover:shadow-[0_14px_32px_-12px_rgba(249,115,22,0.75)]"
+                    : status === "existing"
+                      ? "bg-amber-500 text-white"
+                      : "bg-neutral-950 text-white hover:-translate-y-0.5 hover:bg-brand-500 hover:shadow-[0_14px_32px_-12px_rgba(249,115,22,0.75)]"
                 }`}
               >
                 {loading ? (
                   <>
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    Subscribing…
+                    Checking…
                   </>
-                ) : submitted ? (
+                ) : status === "new" ? (
                   <>
                     <Check className="h-3.5 w-3.5" strokeWidth={3} />
                     Subscribed
+                  </>
+                ) : status === "existing" ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                    Already in
                   </>
                 ) : (
                   <>
@@ -117,7 +121,21 @@ export default function Subscribe() {
               </button>
             </div>
 
-            {/* Error message */}
+            {/* Status message */}
+            {status === "new" && (
+              <div className="mt-2.5 flex items-center gap-1.5 pl-1 text-[11px] font-semibold text-emerald-700">
+                <Check className="h-3 w-3 shrink-0" strokeWidth={3} />
+                You&apos;re on the list!
+              </div>
+            )}
+
+            {status === "existing" && (
+              <div className="mt-2.5 flex items-center gap-1.5 pl-1 text-[11px] font-semibold text-amber-700">
+                <Info className="h-3 w-3 shrink-0" />
+                This email is already subscribed.
+              </div>
+            )}
+
             {error && (
               <div className="mt-2.5 flex items-center gap-1.5 pl-1 text-[11px] font-semibold text-red-600">
                 <AlertCircle className="h-3 w-3 shrink-0" />
@@ -125,8 +143,7 @@ export default function Subscribe() {
               </div>
             )}
 
-            {/* Tiny privacy note */}
-            {!error && (
+            {!error && status === "idle" && (
               <p className="mt-2.5 pl-1 text-[10.5px] text-neutral-400">
                 By subscribing you agree to our{" "}
                 <a

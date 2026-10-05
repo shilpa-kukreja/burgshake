@@ -37,14 +37,19 @@ const VIDEOS = [
 ];
 
 /* ── Tunables ──────────────────────────────────────── */
-const CARD_W = 220;          // card width  (px)  → narrower = portrait
-const CARD_H = 400;          // card height (px)  → taller  = portrait (9:16-ish)
-const GAP = 48;              // gap between cards (px) → more breathing room
-const SPEED = 0.55;          // scroll speed (px per frame)
+const CARD_W = 220;          // card width  (px)
+const CARD_H = 400;          // card height (px)
+const GAP = 48;              // gap between cards (px)
+const SPEED = 0.55;          // auto-scroll speed (px per frame)
 const MAX_ROTATE = 42;       // max rotateY at the edge (deg)
 const MAX_DEPTH = 240;       // max translateZ push-back at the edge (px)
 const MAX_LIFT = 60;         // max translateY lift at the edge (px)
 const PERSPECTIVE = 1400;    // larger = gentler curve
+const DRAG_THRESHOLD = 4;    // px before a tap becomes a drag
+
+/* Precompute once — the track is 3× the set for a seamless loop */
+const LOOPED = [...VIDEOS, ...VIDEOS, ...VIDEOS];
+const SET_WIDTH = VIDEOS.length * (CARD_W + GAP);
 
 export default function VideoShowcase() {
   const wrapRef = useRef(null);
@@ -52,28 +57,33 @@ export default function VideoShowcase() {
   const cardRefs = useRef([]);
   const rafRef = useRef(null);
   const scrollRef = useRef(0);
+  const dragRef = useRef({
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startScroll: 0,
+    moved: false,
+  });
+
   const [paused, setPaused] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
-  /* Duplicate the list 3× so the loop is seamless */
-  const looped = [...VIDEOS, ...VIDEOS, ...VIDEOS];
-  const setWidth = VIDEOS.length * (CARD_W + GAP);   // width of one set
-
+  /* ── Main RAF loop: auto-scroll + per-card 3D transforms ── */
   useEffect(() => {
     const track = trackRef.current;
-    const wrap = wrapRef.current;
-    if (!track || !wrap) return;
+    const wrapEl = wrapRef.current;
+    if (!track || !wrapEl) return;
 
     const tick = () => {
-      if (!paused) {
+      /* Only auto-advance when idle (not paused, not dragging) */
+      if (!paused && !dragRef.current.active) {
         scrollRef.current += SPEED;
-        if (scrollRef.current >= setWidth) scrollRef.current -= setWidth;
+        if (scrollRef.current >= SET_WIDTH) scrollRef.current -= SET_WIDTH;
       }
 
-      /* Move the track */
       track.style.transform = `translate3d(${-scrollRef.current}px, 0, 0)`;
 
-      /* Apply per-card 3D transforms based on distance from viewport center */
-      const wrapRect = wrap.getBoundingClientRect();
+      const wrapRect = wrapEl.getBoundingClientRect();
       const centerX = wrapRect.left + wrapRect.width / 2;
       const halfW = wrapRect.width / 2;
 
@@ -82,25 +92,22 @@ export default function VideoShowcase() {
         const r = card.getBoundingClientRect();
         const cardCenter = r.left + r.width / 2;
 
-        /* -1 at left edge, 0 at center, +1 at right edge.
-           Clamp so cards far off-screen don't over-rotate. */
         let t = (cardCenter - centerX) / halfW;
         t = Math.max(-1, Math.min(1, t));
 
-        /* Ease so the middle stays flat longer and edges curve faster */
+        /* Ease so the middle stays flat longer, edges curve faster */
         const eased = Math.sign(t) * Math.pow(Math.abs(t), 1.4);
 
-        const rotateY = -eased * MAX_ROTATE;             // negative → edges tilt inward
-        const translateZ = -Math.abs(eased) * MAX_DEPTH; // edges push back
-        const translateY = Math.abs(eased) * MAX_LIFT;   // edges lift (wave)
-        const scale = 1 - Math.abs(eased) * 0.08;        // slight shrink for depth
+        const rotateY = -eased * MAX_ROTATE;
+        const translateZ = -Math.abs(eased) * MAX_DEPTH;
+        const translateY = Math.abs(eased) * MAX_LIFT;
+        const scale = 1 - Math.abs(eased) * 0.08;
 
         card.style.transform = `
           translate3d(0, ${translateY}px, ${translateZ}px)
           rotateY(${rotateY}deg)
           scale(${scale})
         `;
-        /* Brightness falls off with distance — simulates lighting */
         card.style.filter = `brightness(${1 - Math.abs(eased) * 0.25})`;
       });
 
@@ -109,10 +116,82 @@ export default function VideoShowcase() {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [paused, setWidth]);
+  }, [paused]);
 
-  const onEnter = useCallback(() => setPaused(true), []);
-  const onLeave = useCallback(() => setPaused(false), []);
+  /* ── Pointer handlers — works for mouse and touch ── */
+  const onPointerDown = useCallback((e) => {
+    /* Only left mouse button — ignore right/middle */
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+
+    dragRef.current.active = true;
+    dragRef.current.pointerId = e.pointerId;
+    dragRef.current.startX = e.clientX;
+    dragRef.current.startScroll = scrollRef.current;
+    dragRef.current.moved = false;
+    setDragging(true);
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+  }, []);
+
+  const onPointerMove = useCallback((e) => {
+    if (!dragRef.current.active) return;
+    if (e.pointerId !== dragRef.current.pointerId) return;
+
+    const dx = e.clientX - dragRef.current.startX;
+    if (!dragRef.current.moved && Math.abs(dx) > DRAG_THRESHOLD) {
+      dragRef.current.moved = true;
+    }
+
+    /* Drag right → scroll left (natural feeling) */
+    let next = dragRef.current.startScroll - dx;
+
+    /* Wrap into [0, SET_WIDTH) so the loop is infinite in both directions */
+    while (next < 0) next += SET_WIDTH;
+    while (next >= SET_WIDTH) next -= SET_WIDTH;
+
+    scrollRef.current = next;
+  }, []);
+
+  const onPointerUp = useCallback((e) => {
+    if (e.pointerId !== dragRef.current.pointerId) return;
+
+    dragRef.current.active = false;
+    dragRef.current.pointerId = null;
+    setDragging(false);
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+
+    /* On desktop, keep paused if the cursor is still over the carousel */
+    if (e.pointerType === "mouse") {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const stillInside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+      setPaused(stillInside);
+    } else {
+      setPaused(false);
+    }
+  }, []);
+
+  const onPointerCancel = useCallback((e) => {
+    if (e.pointerId !== dragRef.current.pointerId) return;
+    dragRef.current.active = false;
+    dragRef.current.pointerId = null;
+    setDragging(false);
+    setPaused(false);
+  }, []);
+
+  /* ── Hover pause (desktop only) ── */
+  const onMouseEnter = useCallback(() => setPaused(true), []);
+  const onMouseLeave = useCallback(() => {
+    if (!dragRef.current.active) setPaused(false);
+  }, []);
 
   return (
     <section className="relative w-full overflow-hidden bg-[#FDFCFB] py-16 sm:py-24">
@@ -136,13 +215,22 @@ export default function VideoShowcase() {
       {/* 3D Carousel */}
       <div
         ref={wrapRef}
-        onMouseEnter={onEnter}
-        onMouseLeave={onLeave}
-        className="relative w-full"
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onDragStart={(e) => e.preventDefault()}
+        className={`relative w-full select-none ${
+          dragging ? "cursor-grabbing" : "cursor-grab"
+        }`}
         style={{
           perspective: `${PERSPECTIVE}px`,
           perspectiveOrigin: "50% 50%",
           height: `${CARD_H + MAX_LIFT + 40}px`,
+          /* Allows vertical page scroll on touch, captures horizontal drag */
+          touchAction: "pan-y",
         }}
       >
         <div
@@ -153,7 +241,7 @@ export default function VideoShowcase() {
             transformStyle: "preserve-3d",
           }}
         >
-          {looped.map((video, i) => (
+          {LOOPED.map((video, i) => (
             <div
               key={`${video.id}-${i}`}
               ref={(el) => {
@@ -176,34 +264,25 @@ export default function VideoShowcase() {
                   playsInline
                   autoPlay
                   preload="metadata"
-                  className="h-full w-full object-cover"
+                  draggable={false}
+                  className="pointer-events-none h-full w-full object-cover"
                 />
+
                 {/* Warm brand tint on hover only */}
                 <div className="pointer-events-none absolute inset-0 bg-brand-500/0 transition-colors duration-500 group-hover:bg-brand-500/15" />
-                {/* Glossy sheen for depth cue */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/20" />
+
+                {/* Glossy sheen — desktop only to keep mobile edges clean */}
+                <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-b from-white/10 via-transparent to-black/20 sm:block" />
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Edge fades — makes the loop disappear into the background */}
-      <div className="pointer-events-none absolute inset-y-16 left-0 z-10 w-24 bg-gradient-to-r from-[#FDFCFB] via-[#FDFCFB]/80 to-transparent sm:w-40" />
-      <div className="pointer-events-none absolute inset-y-16 right-0 z-10 w-24 bg-gradient-to-l from-[#FDFCFB] via-[#FDFCFB]/80 to-transparent sm:w-40" />
-
-      {/* Centre CTA */}
-      {/* <div className="mt-14 flex justify-center px-6">
-        <a
-          href="/menu"
-          className="group inline-flex items-center gap-2 rounded-full bg-brand-500 px-8 py-4 text-[13.5px] font-bold text-white shadow-[0_16px_40px_-12px_rgba(249,115,22,0.7)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-600 hover:shadow-[0_20px_50px_-12px_rgba(249,115,22,0.85)]"
-        >
-          Get Started
-          <span className="transition-transform duration-300 group-hover:translate-x-0.5">
-            →
-          </span>
-        </a>
-      </div> */}
+      {/* Edge fades — desktop only. Hidden on mobile so no white texture
+          sits on top of the videos when the viewport is narrow. */}
+      <div className="pointer-events-none absolute inset-y-16 left-0 z-10 hidden w-24 bg-gradient-to-r from-[#FDFCFB] via-[#FDFCFB]/80 to-transparent sm:block sm:w-40" />
+      <div className="pointer-events-none absolute inset-y-16 right-0 z-10 hidden w-24 bg-gradient-to-l from-[#FDFCFB] via-[#FDFCFB]/80 to-transparent sm:block sm:w-40" />
     </section>
   );
 }

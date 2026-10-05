@@ -7,6 +7,8 @@ import MenuItem from "../models/MenuItem.js";
 // import Order from "../models/Order.js";
 // import User from "../models/User.js";
 // import Contact from "../models/Contact.js";
+import Subscriber from "../models/Subscriber.js";
+
 
 const connectDb = async () => {
   try {
@@ -26,6 +28,18 @@ const connectDb = async () => {
       ]);
       console.log("Indexes synced with schemas");
     }
+
+
+    // inside connectDb():
+if (process.env.NODE_ENV !== "production" || process.env.SYNC_INDEXES === "true") {
+  await Promise.all([
+    
+    Subscriber.syncIndexes(),   // ← add this line
+
+  ]);
+  console.log("Indexes synced");
+}
+
 
     return conn;
   } catch (error) {

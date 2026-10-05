@@ -157,28 +157,13 @@ export default function Footer() {
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
           {/* ── Brand column ────────────────────────── */}
           <div className="lg:col-span-4">
-            <Link href="/" className="group inline-flex items-center gap-2.5">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-lg shadow-brand-500/25">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5 text-white"
-                >
-                  <path d="M4 8h16" />
-                  <path d="M4 12h16" />
-                  <path d="M4 16h16" />
-                  <path d="M8 4h8" />
-                </svg>
-              </span>
-              <span className="font-display text-xl font-extrabold tracking-tight">
-                <span className="text-neutral-950">Burg</span>
-                <span className="text-brand-500">shake</span>
-              </span>
-            </Link>
+            <Link href="/" className="group flex shrink-0 items-center">
+          <img
+            src="/logo.png"
+            alt="Burgshake"
+            className="h-17 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+          />
+        </Link>
 
             <p className="mt-5 max-w-sm text-[14px] leading-[1.7] text-neutral-500">
               Handcrafted burgers and velvety thick shakes — made fresh to
