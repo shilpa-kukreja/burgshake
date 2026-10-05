@@ -28,6 +28,7 @@ const LoginPageContent = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendIn, setResendIn] = useState(0);
+  const [needsProfile, setNeedsProfile] = useState(false);
 
   /* Phone-step fields */
   const [name, setName] = useState("");
@@ -71,12 +72,19 @@ const LoginPageContent = () => {
     return () => clearTimeout(t);
   }, [resendIn]);
 
-  /* Focus first OTP cell when arriving at the OTP step */
+  /* Focus the right element when arriving at the OTP step */
   useEffect(() => {
-    if (step === "otp") {
+    if (step !== "otp") return;
+    /* If profile needs completing, focus the name field first */
+    if (needsProfile) {
+      setTimeout(() => {
+        const el = document.getElementById("otp-name-field");
+        el?.focus();
+      }, 100);
+    } else {
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     }
-  }, [step]);
+  }, [step, needsProfile]);
 
   /* ── Send OTP ────────────────────────────────── */
   const handleSendOtp = async (e) => {
@@ -123,30 +131,55 @@ const LoginPageContent = () => {
       return;
     }
 
+    /* When completing profile, name + email are required */
+    if (needsProfile) {
+      if (name.trim().length < 2) {
+        setError("Please enter your full name.");
+        return;
+      }
+      if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+        setError("Please enter a valid email.");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const payload = { phone, otp: code };
-      if (mode === "signup") {
+      if (needsProfile || mode === "signup") {
         payload.name = name.trim();
         payload.email = email.trim().toLowerCase();
       }
-      await verifyOtp(payload);
-      router.push(redirectTo);
-    } catch (err) {
-      const msg = err.message || "Invalid OTP. Please try again.";
 
-      /* Backend said name+email required = phone isn't registered yet.
-         Help the user by switching to Sign Up. */
-      if (/name and email are required/i.test(msg)) {
-        setError("No account found for this number. Please sign up first.");
-        setMode("signup");
-        setStep("phone");
-        setOtp(["", "", "", "", "", ""]);
-      } else {
-        setError(msg);
-        setOtp(["", "", "", "", "", ""]);
-        otpRefs.current[0]?.focus();
+      const data = await verifyOtp(payload);
+
+      /* Backend says the phone is new — ask for name + email next,
+         reusing the same OTP. No second SMS. */
+      if (data?.needsProfile) {
+        /* Prefill from the last guest order if the phone matches */
+        try {
+          const raw = localStorage.getItem("burgshake_last_order");
+          if (raw) {
+            const last = JSON.parse(raw);
+            const c = last?.customer;
+            if (c && c.phone === phone) {
+              if (c.name && !name) setName(c.name);
+              if (c.email && !email) setEmail(c.email);
+            }
+          }
+        } catch {}
+
+        setNeedsProfile(true);
+        setError("");
+        return;
       }
+
+      /* Success — token is set inside AuthContext, just navigate */
+      router.replace(redirectTo);
+    } catch (err) {
+      setError(err.message || "Invalid OTP. Please try again.");
+      setOtp(["", "", "", "", "", ""]);
+      otpRefs.current[0]?.focus();
     } finally {
       setLoading(false);
     }
@@ -161,6 +194,8 @@ const LoginPageContent = () => {
       await sendOtp(phone);
       setResendIn(30);
       setOtp(["", "", "", "", "", ""]);
+      /* Reset the needsProfile flow — a fresh OTP restarts verification */
+      setNeedsProfile(false);
       otpRefs.current[0]?.focus();
     } catch (err) {
       setError(err.message || "Couldn't resend OTP.");
@@ -174,6 +209,7 @@ const LoginPageContent = () => {
     setStep("phone");
     setOtp(["", "", "", "", "", ""]);
     setError("");
+    setNeedsProfile(false);
   };
 
   /* ── Switch login/signup tab ─────────────────── */
@@ -183,6 +219,7 @@ const LoginPageContent = () => {
     setStep("phone");
     setError("");
     setOtp(["", "", "", "", "", ""]);
+    setNeedsProfile(false);
     if (newMode === "login") {
       setName("");
       setEmail("");
@@ -241,7 +278,9 @@ const LoginPageContent = () => {
               <div className="inline-flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-brand-600">
                 <Sparkles className="h-3 w-3" />
                 {!isPhoneStep
-                  ? "Verify"
+                  ? needsProfile
+                    ? "Almost there"
+                    : "Verify"
                   : mode === "login"
                     ? "Welcome back"
                     : "Get started"}
@@ -249,12 +288,21 @@ const LoginPageContent = () => {
 
               <h1 className="mt-3 font-display text-[1.65rem] font-bold leading-[1.15] tracking-[-0.02em] text-neutral-950 sm:text-[1.85rem]">
                 {!isPhoneStep ? (
-                  <>
-                    Enter the{" "}
-                    <span className="font-serif italic font-normal text-brand-500">
-                      code.
-                    </span>
-                  </>
+                  needsProfile ? (
+                    <>
+                      Complete your{" "}
+                      <span className="font-serif italic font-normal text-brand-500">
+                        profile.
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Enter the{" "}
+                      <span className="font-serif italic font-normal text-brand-500">
+                        code.
+                      </span>
+                    </>
+                  )
                 ) : mode === "login" ? (
                   <>
                     Sign in to{" "}
@@ -274,11 +322,20 @@ const LoginPageContent = () => {
 
               {!isPhoneStep && (
                 <p className="mt-3 text-[13px] leading-[1.6] text-neutral-500">
-                  We sent a 6-digit code to{" "}
-                  <strong className="font-bold text-neutral-800">
-                    {maskedPhone}
-                  </strong>
-                  .
+                  {needsProfile ? (
+                    <>
+                      Your phone is verified. Just add your name and email
+                      to finish — no new code needed.
+                    </>
+                  ) : (
+                    <>
+                      We sent a 6-digit code to{" "}
+                      <strong className="font-bold text-neutral-800">
+                        {maskedPhone}
+                      </strong>
+                      .
+                    </>
+                  )}
                 </p>
               )}
             </div>
@@ -417,6 +474,18 @@ const LoginPageContent = () => {
             {/* ═══ OTP STEP ═════════════════════ */}
             {!isPhoneStep && (
               <>
+                {/* Info banner shown only when completing profile */}
+                {needsProfile && (
+                  <div className="flex items-start gap-2.5 rounded-2xl border border-brand-200 bg-brand-50/60 px-3.5 py-3">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                    <p className="text-[12px] leading-[1.55] text-brand-800">
+                      You&apos;ve ordered with us before — add your name and
+                      email to finish setting up your account.
+                    </p>
+                  </div>
+                )}
+
+                {/* 6-digit code — always visible so the user sees what's verified */}
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                     6-digit Code
@@ -443,21 +512,53 @@ const LoginPageContent = () => {
                   </div>
                 </div>
 
+                {/* Profile-completion fields — appear only when needed */}
+                {needsProfile && (
+                  <div className="space-y-4 border-t border-dashed border-neutral-200 pt-5">
+                    <Field
+                      id="otp-name-field"
+                      icon={User}
+                      label="Full Name"
+                      value={name}
+                      onChange={setName}
+                      placeholder="Aarav Mehta"
+                      autoComplete="name"
+                    />
+                    <Field
+                      icon={Mail}
+                      label="Email Address"
+                      type="email"
+                      value={email}
+                      onChange={setEmail}
+                      placeholder="you@email.com"
+                      autoComplete="email"
+                    />
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={loading || !otpFilled}
+                  disabled={
+                    loading ||
+                    !otpFilled ||
+                    (needsProfile &&
+                      (name.trim().length < 2 ||
+                        !/^\S+@\S+\.\S+$/.test(email.trim())))
+                  }
                   className="group mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-neutral-950 px-6 py-3.5 text-[13.5px] font-bold text-white shadow-[0_12px_28px_-12px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-500 hover:shadow-[0_14px_34px_-12px_rgba(249,115,22,0.7)] disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:shadow-none disabled:hover:bg-neutral-300"
                 >
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Verifying…
+                      {needsProfile ? "Creating account…" : "Verifying…"}
                     </>
                   ) : (
                     <>
-                      {mode === "signup"
-                        ? "Verify & Create Account"
-                        : "Verify & Sign In"}
+                      {needsProfile
+                        ? "Create Account"
+                        : mode === "signup"
+                          ? "Verify & Create Account"
+                          : "Verify & Sign In"}
                       <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                     </>
                   )}
@@ -471,7 +572,7 @@ const LoginPageContent = () => {
                     className="inline-flex items-center gap-1 text-neutral-500 transition-colors hover:text-brand-600 disabled:opacity-50"
                   >
                     <ArrowLeft className="h-3 w-3" />
-                    Change number
+                    {needsProfile ? "Start over" : "Change number"}
                   </button>
 
                   <button
@@ -512,6 +613,7 @@ const LoginPageContent = () => {
 
 /* ── Small reusable field ────────────────────────────── */
 function Field({
+  id,
   icon: Icon,
   label,
   type = "text",
@@ -528,6 +630,7 @@ function Field({
       <div className="relative mt-2">
         <Icon className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" />
         <input
+          id={id}
           type={type}
           required
           value={value}

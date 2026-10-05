@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Otp from "../models/Otp.js";
+import Order from "../models/Order.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import {
@@ -111,20 +112,33 @@ export async function verifyOtp(req, res, next) {
       throw new ApiError(400, "Invalid OTP.");
     }
 
-    /* Correct — burn the OTP immediately so it can't be reused */
-    await Otp.deleteOne({ _id: record._id });
+    /* ─────────────────────────────────────────────────
+       Correct code.
+
+       We deliberately do NOT burn the OTP yet. If this is
+       a brand-new phone and name/email weren't supplied,
+       we return a `needsProfile` flag instead of an error
+       so the frontend can complete the profile on the same
+       screen — reusing this same OTP. No second SMS.
+       The OTP is deleted in the success path below.
+       ───────────────────────────────────────────────── */
 
     /* Find or create the user */
     let user = await User.findOne({ phone });
     let isNewUser = false;
 
     if (!user) {
+      /* New phone — need name + email */
       if (!name || !email) {
-        throw new ApiError(
-          400,
-          "Name and email are required for new signups."
+        return res.json(
+          new ApiResponse(
+            200,
+            { needsProfile: true, phone, verified: true },
+            "Please complete your profile to finish signing up."
+          )
         );
       }
+
       if (!/^\S+@\S+\.\S+$/.test(email)) {
         throw new ApiError(400, "Invalid email address.");
       }
@@ -155,6 +169,35 @@ export async function verifyOtp(req, res, next) {
       if (!user.verifiedAt) user.verifiedAt = new Date();
       user.lastLoginAt = new Date();
       await user.save();
+    }
+
+    /* Account is settled — safe to consume the OTP now */
+    await Otp.deleteOne({ _id: record._id });
+
+    /* ═══════════════════════════════════════════════════
+       Link any guest orders placed with this phone or email.
+       Runs on both signup and sign-in so orders never stay orphaned.
+       Non-fatal — a failure here doesn't block login.
+       ═══════════════════════════════════════════════════ */
+    try {
+      const linkResult = await Order.updateMany(
+        {
+          userId: null,
+          $or: [
+            { "customer.phone": user.phone },
+            { "customer.email": user.email.toLowerCase().trim() },
+          ],
+        },
+        { $set: { userId: user._id } }
+      );
+
+      if (linkResult.modifiedCount > 0) {
+        console.log(
+          `[auth] Linked ${linkResult.modifiedCount} guest order(s) to user ${user._id}`
+        );
+      }
+    } catch (linkErr) {
+      console.error("[auth] Guest order linking failed:", linkErr.message);
     }
 
     /* Issue JWT (same shape as admin login) */

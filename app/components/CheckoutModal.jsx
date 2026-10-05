@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   X,
   ArrowLeft,
@@ -24,6 +25,7 @@ import {
   Sparkles,
   Router,
   Download,
+  ArrowUpRight,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
@@ -167,8 +169,7 @@ export default function CheckoutModal({ open, onClose }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
-  const [payment, setPayment] = useState("counter");
-
+const [payment, setPayment] = useState("razorpay");
   /* Coupon state */
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null); // coupon code string
@@ -281,7 +282,13 @@ export default function CheckoutModal({ open, onClose }) {
       alert("Couldn't generate the receipt. Please try again.");
     }
   };
-
+const handleSignInFromSuccess = () => {
+  resetAll();
+  closeCart();
+  closeWishlist();
+  onClose();
+  router.push("/login?from=/account");
+};
   /* Auto re-validate coupon when cart subtotal changes.
      If the coupon no longer qualifies (e.g. cart dropped below min), remove it. */
   useEffect(() => {
@@ -347,7 +354,7 @@ export default function CheckoutModal({ open, onClose }) {
     setPhone("");
     setEmail("");
     setNotes("");
-    setPayment("counter");
+setPayment("razorpay");
     setCouponCode("");
     setAppliedCoupon(null);
     setDiscount(0);
@@ -690,6 +697,29 @@ export default function CheckoutModal({ open, onClose }) {
               <Download className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
               Download Receipt
             </button>
+{/* ═══ Guest sign-in nudge ═══ */}
+{!user && (
+  <div className="mx-6 mb-6 flex items-start gap-3 rounded-xl border border-brand-200 bg-brand-50/60 p-3.5">
+    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+    <div className="min-w-0 flex-1">
+      <div className="text-[12.5px] font-bold text-brand-900">
+        Save this order to your account
+      </div>
+      <p className="mt-1 text-[11.5px] leading-[1.55] text-brand-800/85">
+        Sign in with <strong>+91 {phone}</strong> to track your orders
+        and see them anytime.
+      </p>
+      <button
+        type="button"
+        onClick={handleSignInFromSuccess}
+        className="mt-2.5 inline-flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-[0.1em] text-brand-700 underline-offset-2 hover:underline"
+      >
+        Sign in
+        <ArrowUpRight className="h-3 w-3" />
+      </button>
+    </div>
+  </div>
+)}
 
             <button
               onClick={handleClose}
