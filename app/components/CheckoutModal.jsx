@@ -28,10 +28,9 @@ import {
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useAuth } from "../context/AuthContext";
-import { api, resolveImageUrl} from "../lib/api";
+import { api, resolveImageUrl } from "../lib/api";
 import { loadRazorpayScript, getRazorpayKeyId } from "../lib/razorpay";
 import { generateOrderReceipt } from "../lib/userreceipt";
-
 
 /* ─── Static data ───────────────────────────────────── */
 const OUTLETS = [
@@ -155,12 +154,10 @@ const ALL_TIME_SLOTS = generateTimeSlots();
    COMPONENT
    ═══════════════════════════════════════════════════════ */
 export default function CheckoutModal({ open, onClose }) {
+  const router = useRouter();
 
-const router = useRouter();
-
- const { items, subtotal, clearCart, closeCart } = useCart();
- const { closeWishlist } = useWishlist();
-
+  const { items, subtotal, clearCart, closeCart } = useCart();
+  const { closeWishlist } = useWishlist();
 
   const [step, setStep] = useState(1);
   const [outlet, setOutlet] = useState("bandra");
@@ -189,7 +186,7 @@ const router = useRouter();
 
   const dateOptions = useMemo(() => buildDateOptions(), [open]);
 
-const [completedOrder, setCompletedOrder] = useState(null);
+  const [completedOrder, setCompletedOrder] = useState(null);
   const availableTimeSlots = useMemo(() => {
     if (!date) return [];
 
@@ -275,16 +272,15 @@ const [completedOrder, setCompletedOrder] = useState(null);
     return () => window.removeEventListener("keydown", onKey);
   }, [placing, orderNumber]);
 
-
   const handleDownloadReceipt = () => {
-  if (!completedOrder) return;
-  try {
-    generateOrderReceipt(completedOrder);
-  } catch (err) {
-    console.error("Receipt generation failed:", err);
-    alert("Couldn't generate the receipt. Please try again.");
-  }
-};
+    if (!completedOrder) return;
+    try {
+      generateOrderReceipt(completedOrder);
+    } catch (err) {
+      console.error("Receipt generation failed:", err);
+      alert("Couldn't generate the receipt. Please try again.");
+    }
+  };
 
   /* Auto re-validate coupon when cart subtotal changes.
      If the coupon no longer qualifies (e.g. cart dropped below min), remove it. */
@@ -324,8 +320,11 @@ const [completedOrder, setCompletedOrder] = useState(null);
   const requiredPayment = requiresOnlinePayment ? "razorpay" : "counter";
 
   useEffect(() => {
-    setPayment(requiredPayment);
-  }, [requiredPayment]);
+    /* Force online when required. Otherwise leave the user's choice alone. */
+    if (requiresOnlinePayment) {
+      setPayment("razorpay");
+    }
+  }, [requiresOnlinePayment]);
 
   /* ── Handlers ─────────────────────────────────────── */
   const handleClose = () => {
@@ -336,7 +335,7 @@ const [completedOrder, setCompletedOrder] = useState(null);
     closeCart();
     closeWishlist();
     onClose();
-    router.push('/account');
+    router.push("/account");
   };
 
   const resetAll = () => {
@@ -356,7 +355,7 @@ const [completedOrder, setCompletedOrder] = useState(null);
     setApplying(false);
     setOrderNumber(null);
     setSubmitError("");
-setCompletedOrder(null);
+    setCompletedOrder(null);
   };
 
   const handleDateChange = (value) => {
@@ -582,9 +581,9 @@ setCompletedOrder(null);
       console.error("Snapshot save failed:", e);
     }
 
-   /* Snapshot the whole order before the cart clears —
+    /* Snapshot the whole order before the cart clears —
      everything cart-derived will be zeroed out a tick from now */
-  setCompletedOrder(order);
+    setCompletedOrder(order);
 
     /* Show success screen + clear cart */
     setOrderNumber(order.orderNumber);
@@ -664,11 +663,13 @@ setCompletedOrder(null);
 
           <div className="mx-6 mb-6 flex items-baseline justify-between border-t border-neutral-200/70 pt-4">
             <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-  {completedOrder?.payment === "razorpay" ? "Paid" : "Pay at counter"}
-</span>
+              {completedOrder?.payment === "razorpay"
+                ? "Paid"
+                : "Pay at counter"}
+            </span>
             <span className="font-display text-[20px] font-extrabold text-neutral-950">
-  ₹{completedOrder?.total ?? 0}
-</span>
+              ₹{completedOrder?.total ?? 0}
+            </span>
           </div>
 
           <div className="mx-6 mb-6 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/70 p-3.5">
@@ -681,22 +682,22 @@ setCompletedOrder(null);
           </div>
 
           <div className="space-y-2.5 px-6 pb-6">
-  <button
-    type="button"
-    onClick={handleDownloadReceipt}
-    className="group flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3.5 text-[13.5px] font-bold text-neutral-800 transition-all duration-300 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700"
-  >
-    <Download className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
-    Download Receipt
-  </button>
+            <button
+              type="button"
+              onClick={handleDownloadReceipt}
+              className="group flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3.5 text-[13.5px] font-bold text-neutral-800 transition-all duration-300 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700"
+            >
+              <Download className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
+              Download Receipt
+            </button>
 
-  <button
-    onClick={handleClose}
-    className="w-full rounded-full bg-neutral-950 px-6 py-3.5 text-[13.5px] font-bold text-white transition-all duration-300 hover:bg-brand-500"
-  >
-    Done
-  </button>
-</div>
+            <button
+              onClick={handleClose}
+              className="w-full rounded-full bg-neutral-950 px-6 py-3.5 text-[13.5px] font-bold text-white transition-all duration-300 hover:bg-brand-500"
+            >
+              Done
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1034,64 +1035,108 @@ setCompletedOrder(null);
                     </div>
                   )}
                   {/* Payment method — auto-selected by order total */}
-                  <div>
-                    <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      <CreditCard className="h-3 w-3" />
-                      Payment Method
-                    </label>
+               {/* ═══ Payment method ═══════════════════════ */}
+<div>
+  <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-500">
+    <CreditCard className="h-3 w-3" />
+    Payment Method
+  </label>
 
-                    {(() => {
-                      const method = PAYMENT_METHODS[requiredPayment];
-                      const { Icon } = method;
+  {requiresOnlinePayment ? (
+    /* ── Order ≥ threshold → only online is allowed ── */
+    <div className="mt-3 rounded-2xl border border-brand-500 bg-brand-50/60 p-4 shadow-[0_10px_26px_-14px_rgba(249,115,22,0.5)]">
+      <div className="flex items-start gap-3.5">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500 text-white">
+          <CreditCard className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-display text-[14px] font-bold text-neutral-950">
+              Pay Online
+            </span>
+            <span className="rounded-full bg-brand-500 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-white">
+              Required
+            </span>
+          </div>
+          <div className="mt-0.5 text-[11.5px] text-neutral-600">
+            UPI · Card · Netbanking · Wallet
+          </div>
+        </div>
+      </div>
 
-                      return (
-                        <div className="mt-3 rounded-2xl border border-brand-500 bg-brand-50/60 p-4 shadow-[0_10px_26px_-14px_rgba(249,115,22,0.5)]">
-                          <div className="flex items-start gap-3.5">
-                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500 text-white">
-                              <Icon className="h-4 w-4" />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="font-display text-[14px] font-bold text-neutral-950">
-                                  {method.label}
-                                </span>
-                                <span className="rounded-full bg-brand-500 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-white">
-                                  {requiresOnlinePayment
-                                    ? "Required"
-                                    : "Available"}
-                                </span>
-                              </div>
-                              <div className="mt-0.5 text-[11.5px] text-neutral-600">
-                                {method.desc}
-                              </div>
-                            </div>
-                          </div>
+      <div className="mt-3 border-t border-brand-200/60 pt-3 text-[11px] leading-[1.6] text-brand-800">
+        Orders of{" "}
+        <strong className="font-bold">₹{ONLINE_PAYMENT_THRESHOLD} or more</strong>{" "}
+        must be paid online before pickup. You&apos;ll be redirected to a
+        secure Razorpay window.
+      </div>
+    </div>
+  ) : (
+    /* ── Order below threshold → user picks ── */
+    <div className="mt-3 space-y-2.5">
+      {[PAYMENT_METHODS.razorpay, PAYMENT_METHODS.counter].map((method) => {
+        const { Icon } = method;
+        const selected = payment === method.id;
+        return (
+          <button
+            key={method.id}
+            type="button"
+            onClick={() => setPayment(method.id)}
+            className={`flex w-full items-start gap-3.5 rounded-2xl border p-4 text-left transition-all duration-300 ${
+              selected
+                ? "border-brand-500 bg-brand-50/60 shadow-[0_10px_26px_-14px_rgba(249,115,22,0.5)]"
+                : "border-neutral-200 bg-white hover:border-brand-200 hover:bg-brand-50/30"
+            }`}
+          >
+            <span
+              className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors ${
+                selected
+                  ? "bg-brand-500 text-white"
+                  : "bg-neutral-100 text-neutral-600"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+            </span>
 
-                          <div className="mt-3 border-t border-brand-200/60 pt-3 text-[11px] leading-[1.6] text-brand-800">
-                            {requiresOnlinePayment ? (
-                              <>
-                                Orders of{" "}
-                                <strong className="font-bold">
-                                  ₹{ONLINE_PAYMENT_THRESHOLD} or more
-                                </strong>{" "}
-                                must be paid online before pickup. You&apos;ll
-                                be redirected to a secure Razorpay window.
-                              </>
-                            ) : (
-                              <>
-                                Orders below{" "}
-                                <strong className="font-bold">
-                                  ₹{ONLINE_PAYMENT_THRESHOLD}
-                                </strong>{" "}
-                                can be paid in cash or by card when you collect
-                                your order.
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-display text-[14px] font-bold text-neutral-950">
+                  {method.label}
+                </span>
+                {selected && (
+                  <span className="rounded-full bg-brand-500 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-white">
+                    Selected
+                  </span>
+                )}
+              </div>
+              <div className="mt-0.5 text-[11.5px] text-neutral-600">
+                {method.desc}
+              </div>
+            </div>
+
+            {/* Radio-style indicator */}
+            <span
+              className={`mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-all ${
+                selected
+                  ? "border-brand-500 bg-brand-500"
+                  : "border-neutral-300 bg-white"
+              }`}
+            >
+              {selected && (
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              )}
+            </span>
+          </button>
+        );
+      })}
+
+      <div className="rounded-2xl border border-neutral-200/70 bg-white/70 p-3 text-[11px] leading-[1.6] text-neutral-600">
+        Pay online now, or pay cash/card when you collect your order. Both are
+        fine for orders under <strong>₹{ONLINE_PAYMENT_THRESHOLD}</strong>.
+      </div>
+    </div>
+  )}
+</div>
 
                   {/* Coupon — same in both payment modes */}
                   <div>
