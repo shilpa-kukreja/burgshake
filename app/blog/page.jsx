@@ -140,7 +140,7 @@ function BlogPageContent() {
   const totalPages = pagination?.pages || 1;
 
   return (
-    <main className="min-h-screen bg-[#FDFCFB] pt-24 sm:pt-28 lg:pt-32">
+    <main className="min-h-screen bg-[#FDFCFB] pt-18 sm:pt-24 lg:pt-28">
       {/* Hero header */}
       <section className="relative overflow-hidden border-b border-neutral-200/70">
         <div
@@ -151,10 +151,10 @@ function BlogPageContent() {
         </div>
 
         <div className="mx-auto max-w-[1400px] px-6 pb-10 pt-4 lg:px-10 lg:pb-12 lg:pt-6">
-          <div className="inline-flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-brand-600">
+          {/* <div className="inline-flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-brand-600">
             <span className="h-px w-8 bg-brand-500" />
             The Journal
-          </div>
+          </div> */}
 
           <h1 className="mt-3 max-w-2xl font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.02em] text-neutral-950 sm:text-[2.4rem] lg:text-[2.7rem]">
             Notes, recipes &{" "}
@@ -171,10 +171,10 @@ function BlogPageContent() {
       </section>
 
       {/* Filters */}
-      <section className="border-b border-neutral-200/70 bg-white/50">
+      {/* <section className="border-b border-neutral-200/70 bg-white/50">
         <div className="mx-auto max-w-[1400px] px-6 py-4 lg:px-10">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            {/* Tag chips */}
+            
             <div className="-mx-6 flex gap-1.5 overflow-x-auto px-6 sm:mx-0 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <button
                 onClick={() => {
@@ -189,25 +189,10 @@ function BlogPageContent() {
               >
                 All
               </button>
-              {allTags.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => {
-                    setTag(t);
-                    setPage(1);
-                  }}
-                  className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[11.5px] font-bold uppercase tracking-[0.12em] transition-all ${
-                    tag === t
-                      ? "border-neutral-950 bg-neutral-950 text-white"
-                      : "border-neutral-200 bg-white text-neutral-600 hover:border-brand-300 hover:text-brand-600"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+             
             </div>
 
-            {/* Search */}
+            
             <div className="relative w-full sm:w-72">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" />
               <input
@@ -228,7 +213,7 @@ function BlogPageContent() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Posts */}
       <section className="mx-auto max-w-[1400px] px-6 py-12 lg:px-10 lg:py-16">

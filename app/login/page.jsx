@@ -419,11 +419,7 @@ const LoginPageContent = () => {
                       required
                       autoFocus
                       value={phone}
-                      onChange={(e) =>
-                        setPhone(
-                          e.target.value.replace(/\D/g, "").slice(0, 10)
-                        )
-                      }
+                     onChange={(e) => setPhone(normalizePhone(e.target.value))}
                       placeholder="98765 43210"
                       autoComplete="tel"
                       className="w-full rounded-2xl border border-neutral-200 bg-white py-3.5 pl-[76px] pr-11 text-[14px] font-medium tabular-nums text-neutral-900 placeholder:text-neutral-400 outline-none transition-all duration-300 focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
@@ -610,6 +606,18 @@ const LoginPageContent = () => {
     </div>
   );
 };
+
+
+function normalizePhone(raw) {
+  let digits = String(raw || "").replace(/\D/g, "");
+  /* If the value is longer than a full number, strip a known prefix */
+  if (digits.length > 10) {
+    if (digits.startsWith("91")) digits = digits.slice(2);
+    else if (digits.startsWith("0")) digits = digits.slice(1);
+  }
+  return digits.slice(0, 10);
+}
+
 
 /* ── Small reusable field ────────────────────────────── */
 function Field({

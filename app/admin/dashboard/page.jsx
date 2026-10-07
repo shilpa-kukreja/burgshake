@@ -17,7 +17,7 @@ import {
 import AdminGuard from "../../components/admin/AdminGuard";
 import AdminTopbar from "../../components/admin/AdminTopbar";
 import StatCard from "../../components/admin/StatCard";
-import { api } from "../../lib/api";
+import { api, resolveImageUrl } from "../../lib/api";
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState(null);
@@ -226,7 +226,7 @@ export default function AdminDashboardPage() {
                       <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
                         {item.img && (
                           <img
-                            src={item.img}
+                            src={resolveImageUrl(item.img)}
                             alt={item.name}
                             className="h-full w-full object-cover"
                           />

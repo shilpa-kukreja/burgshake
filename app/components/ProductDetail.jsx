@@ -120,15 +120,31 @@ export default function ProductDetail({ item }) {
   const isBurger = item.category === "burgers";
 
   /* ── Gallery: array or fallback ────────────────────── */
-  const gallery = useMemo(() => {
-    if (Array.isArray(item.gallery) && item.gallery.length > 0) {
-      return item.gallery;
-    }
+ /* ── Gallery: main image first, then gallery, deduped ── */
+const gallery = useMemo(() => {
+  const main = item.img ? [item.img] : [];
+  const extra = Array.isArray(item.gallery) ? item.gallery : [];
+
+  /* Combine, drop empties, dedupe (so if the main image is also
+     in the gallery array, it doesn't show twice) */
+  const combined = [...main, ...extra].filter(Boolean);
+  const seen = new Set();
+  const unique = combined.filter((url) => {
+    if (seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
+
+  /* If nothing at all, fall back to a stock image */
+  if (unique.length === 0) {
     return [
-      item.img,
       "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=800&q=80",
     ];
-  }, [item]);
+  }
+
+  return unique;
+}, [item]);
+
 
   const goToImage = useCallback(
     (i) => {
