@@ -3,7 +3,10 @@ import Coupon from "../models/Coupon.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { resolveCoupon } from "../utils/couponUtils.js";
-
+import {
+   sendOrderConfirmation,
+  sendAdminOrderAlert,
+ } from "../services/email.service.js";
 import { notifyAdmin } from "../utils/notifyAdmin.js";
 import {
   createRazorpayOrder,
@@ -176,6 +179,14 @@ export async function createOrder(req, res, next) {
   /* 🔔 Counter order → notify admin right away */
   await notifyAdmin(order);
 
+     /* 📧 Fire both emails — non-blocking */
+  sendOrderConfirmation(order).catch((err) =>
+    console.error("[email] Customer confirmation failed:", err.message)
+  );
+  sendAdminOrderAlert(order).catch((err) =>
+    console.error("[email] Admin alert failed:", err.message)
+  );
+
   return res.status(201).json(
     new ApiResponse(201, { order }, "Order placed. Pay at counter when you pick up.")
   );
@@ -283,6 +294,14 @@ if (order.couponCode) {
 
 /* 🔔 Only here do we notify admin */
 await notifyAdmin(order);
+
+  /* 📧 Fire both emails — non-blocking */
+  sendOrderConfirmation(order).catch((err) =>
+    console.error("[email] Customer confirmation failed:", err.message)
+  );
+  sendAdminOrderAlert(order).catch((err) =>
+    console.error("[email] Admin alert failed:", err.message)
+  );
 
 res.json(
   new ApiResponse(200, { order }, "Payment verified. Order confirmed.")

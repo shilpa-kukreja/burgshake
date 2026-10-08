@@ -349,3 +349,440 @@ export async function sendWelcomeEmail(subscriber) {
     replyTo: env.EMAIL_USER,
   });
 }
+
+
+
+
+
+
+
+
+/* ── Format "2026-09-23" → "Wed, 23 Sep" ── */
+function formatPickupDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+}
+
+export async function sendOrderConfirmation(order) {
+  const firstName = (order.customer?.name || "there").split(" ")[0];
+  const isPaid = order.payment === "razorpay";
+  const isCounter = order.payment === "counter";
+
+  /* ── Items ──────────────────────────────────────── */
+  const itemsHtml = order.items
+    .map(
+      (item) => `
+      <tr>
+        <td style="padding:14px 0; border-bottom:1px solid #F5E6D3;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td style="font-size:14px; font-weight:700; color:#171717; line-height:1.4;">
+                ${item.name}
+              </td>
+              <td align="right" style="font-size:14px; font-weight:700; color:#171717; white-space:nowrap; padding-left:12px;">
+                ₹${item.price * item.qty}
+              </td>
+            </tr>
+            ${
+              item.customizations
+                ? `<tr><td colspan="2" style="font-size:12px; color:#737373; padding-top:5px; line-height:1.5;">
+                    ${[
+                      item.customizations.bun,
+                      item.customizations.patty,
+                      ...(item.customizations.extras || []),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </td></tr>`
+                : ""
+            }
+            <tr>
+              <td colspan="2" style="font-size:12px; color:#A3A3A3; padding-top:4px;">
+                ₹${item.price} × ${item.qty}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `
+    )
+    .join("");
+
+  /* ── Totals ─────────────────────────────────────── */
+  const totalsHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:12px;">
+      <tr>
+        <td style="padding:6px 0; font-size:13.5px; color:#737373;">Subtotal</td>
+        <td align="right" style="padding:6px 0; font-size:13.5px; color:#404040; font-weight:600;">₹${order.subtotal}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0; font-size:13.5px; color:#737373;">Taxes (5% GST)</td>
+        <td align="right" style="padding:6px 0; font-size:13.5px; color:#404040; font-weight:600;">₹${order.tax}</td>
+      </tr>
+      ${
+        order.discount > 0
+          ? `<tr>
+              <td style="padding:6px 0; font-size:13.5px; color:#059669;">
+                Discount${order.couponCode ? ` (${order.couponCode})` : ""}
+              </td>
+              <td align="right" style="padding:6px 0; font-size:13.5px; color:#059669; font-weight:600;">−₹${order.discount}</td>
+            </tr>`
+          : ""
+      }
+      <tr>
+        <td style="padding:16px 0 0; border-top:1px solid #F5E6D3; font-size:11px; text-transform:uppercase; letter-spacing:0.14em; color:#737373; font-weight:700;">
+          Total
+        </td>
+        <td align="right" style="padding:16px 0 0; border-top:1px solid #F5E6D3; font-size:22px; font-weight:800; color:#171717; letter-spacing:-0.01em;">
+          ₹${order.total}
+        </td>
+      </tr>
+    </table>
+  `;
+
+  /* ── Payment pill ───────────────────────────────── */
+  const paymentPill = isPaid
+    ? `<span style="display:inline-block; padding:6px 12px; border-radius:999px; background:#ECFDF5; color:#047857; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em;">Paid Online</span>`
+    : `<span style="display:inline-block; padding:6px 12px; border-radius:999px; background:#FFF7ED; color:#C2410C; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em;">Pay at Counter</span>`;
+
+  const pickupDateLabel = formatPickupDate(order.pickup.date);
+
+  /* ── Body ───────────────────────────────────────── */
+  const bodyHtml = `
+    <h1 style="margin:0 0 8px; font-size:22px; font-weight:800; color:#171717; letter-spacing:-0.02em; line-height:1.25;">
+      Order confirmed, ${firstName}! 🍔
+    </h1>
+    <p style="margin:0 0 20px; font-size:14px; line-height:1.7; color:#525252;">
+      Thanks for your order. We&apos;ve received it and the kitchen is on it.
+      ${isCounter ? "Just pay at the counter when you pick up." : "Your payment has been received."}
+    </p>
+
+    <!-- Order number card -->
+    <div style="padding:18px; background:#FFF6EC; border-radius:14px; text-align:center; margin-bottom:20px;">
+      <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.16em; color:#EA580C; margin-bottom:6px;">
+        Order Number
+      </div>
+      <div style="font-size:20px; font-weight:800; color:#171717; letter-spacing:-0.01em; word-break:break-word;">
+        ${order.orderNumber}
+      </div>
+      <div style="margin-top:12px;">${paymentPill}</div>
+    </div>
+
+    <!-- ═══ Pickup card — mobile-friendly stacked layout ═══ -->
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #F5E6D3; border-radius:14px; margin-bottom:24px;">
+      <!-- Top row: outlet -->
+      <tr>
+        <td style="padding:16px 18px; background:#FFF6EC; border-radius:14px 14px 0 0;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#EA580C; margin-bottom:8px;">
+            Pickup at
+          </div>
+          <div style="font-size:15px; font-weight:700; color:#171717; line-height:1.4;">
+            ${order.pickup.outletName}
+          </div>
+          <div style="font-size:13px; color:#737373; line-height:1.6; margin-top:4px;">
+            ${order.pickup.outletAddress}
+          </div>
+        </td>
+      </tr>
+      <!-- Bottom row: date + time -->
+      <tr>
+        <td style="padding:16px 18px; border-top:1px solid #F5E6D3;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#EA580C; margin-bottom:8px;">
+            Ready by
+          </div>
+          <div style="font-size:15px; font-weight:700; color:#171717; line-height:1.4;">
+            ${pickupDateLabel}
+          </div>
+          <div style="font-size:13.5px; color:#525252; line-height:1.6; margin-top:4px;">
+            ${order.pickup.timeSlotLabel}
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items -->
+    <h2 style="margin:0 0 4px; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373;">
+      Your Order
+    </h2>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:8px;">
+      ${itemsHtml}
+    </table>
+
+    ${totalsHtml}
+
+    ${
+      order.notes
+        ? `<div style="margin-top:24px; padding:16px; background:#FFF6EC; border-left:3px solid #F97316; border-radius:8px;">
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#EA580C; margin-bottom:6px;">
+              Your Note
+            </div>
+            <div style="font-size:13.5px; line-height:1.7; color:#404040; font-style:italic;">
+              &ldquo;${order.notes}&rdquo;
+            </div>
+          </div>`
+        : ""
+    }
+
+    <!-- Important callout -->
+    <div style="margin-top:24px; padding:16px; background:#FEF3C7; border-radius:12px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#B45309; margin-bottom:6px;">
+        ⚠️ Takeaway only
+      </div>
+      <div style="font-size:13px; line-height:1.65; color:#78350F;">
+        Please collect your order at the counter. We hold ready orders for
+        <strong>30 minutes</strong> past the scheduled time. If you&apos;re running
+        late, call us at <a href="tel:+919876543210" style="color:#B45309; text-decoration:underline;">+91 98765 43210</a>.
+      </div>
+    </div>
+
+    <p style="margin:28px 0 0; font-size:13px; line-height:1.7; color:#737373;">
+      Questions? Reply to this email or call us at 11 AM – 11 PM, any day.
+    </p>
+    <p style="margin:16px 0 0; font-size:13px; color:#404040;">
+      — The Burgshake Team
+    </p>
+  `;
+
+  return sendMail({
+    to: order.customer.email,
+    subject: `Order confirmed — ${order.orderNumber} · Burgshake`,
+    html: emailWrapper({
+      title: "Order Confirmed",
+      preheader: `${order.orderNumber} confirmed · Pickup at ${order.pickup.outletName}, ${order.pickup.timeSlotLabel}`,
+      bodyHtml,
+    }),
+    text: `Thanks ${firstName}! Your order ${order.orderNumber} is confirmed. Total: ₹${order.total}. Pickup at ${order.pickup.outletName} — ${pickupDateLabel}, ${order.pickup.timeSlotLabel}.`,
+    replyTo: env.EMAIL_USER,
+  });
+}
+
+
+
+
+
+
+
+
+
+
+/* ═══════════════════════════════════════════════════
+   EMAIL — New order alert to admin
+   Sent alongside the customer confirmation so the admin
+   has a full copy they can act on.
+   ═══════════════════════════════════════════════════ */
+export async function sendAdminOrderAlert(order) {
+  const isPaid = order.payment === "razorpay";
+  const isCounter = order.payment === "counter";
+  const pickupDateLabel = formatPickupDate(order.pickup.date);
+
+  /* ── Items table ────────────────────────────────── */
+  const itemsHtml = order.items
+    .map((item) => {
+      const customParts = item.customizations
+        ? [
+            item.customizations.bun,
+            item.customizations.patty,
+            ...(item.customizations.extras || []),
+          ].filter(Boolean)
+        : [];
+
+      return `
+        <tr>
+          <td style="padding:12px 0; border-bottom:1px solid #F5E6D3;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-size:14px; font-weight:700; color:#171717; line-height:1.4;">
+                  ${item.qty}× ${item.name}
+                </td>
+                <td align="right" style="font-size:14px; font-weight:700; color:#171717; white-space:nowrap; padding-left:12px;">
+                  ₹${item.price * item.qty}
+                </td>
+              </tr>
+              ${
+                customParts.length
+                  ? `<tr><td colspan="2" style="font-size:12px; color:#737373; padding-top:4px; line-height:1.5;">
+                      ${customParts.join(" · ")}
+                    </td></tr>`
+                  : ""
+              }
+            </table>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  /* ── Payment banner ─────────────────────────────── */
+  const paymentBanner = isPaid
+    ? `<div style="padding:14px 18px; background:#ECFDF5; border-radius:12px; margin-bottom:20px;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#047857; margin-bottom:4px;">
+          ✅ Paid Online
+        </div>
+        <div style="font-size:13px; line-height:1.6; color:#065F46;">
+          Payment received via Razorpay${order.razorpay?.paymentId ? ` — ref <code style="background:#fff; padding:2px 6px; border-radius:4px; font-size:12px;">${order.razorpay.paymentId}</code>` : ""}.
+        </div>
+      </div>`
+    : `<div style="padding:14px 18px; background:#FFF7ED; border-radius:12px; margin-bottom:20px;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#C2410C; margin-bottom:4px;">
+          💵 Collect at Counter
+        </div>
+        <div style="font-size:13px; line-height:1.6; color:#7C2D12;">
+          Customer pays <strong>₹${order.total}</strong> in cash or card on pickup.
+        </div>
+      </div>`;
+
+  /* ── Body ───────────────────────────────────────── */
+  const bodyHtml = `
+    <h1 style="margin:0 0 4px; font-size:20px; font-weight:800; color:#171717; letter-spacing:-0.02em; line-height:1.25;">
+      🍔 New order received
+    </h1>
+    <p style="margin:0 0 20px; font-size:13.5px; line-height:1.6; color:#525252;">
+      A new order has been placed on the website.
+    </p>
+
+    ${paymentBanner}
+
+    <!-- Order number + total -->
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #F5E6D3; border-radius:14px; margin-bottom:20px;">
+      <tr>
+        <td style="padding:16px 18px; background:#FFF6EC; border-radius:14px 14px 0 0;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#EA580C; margin-bottom:6px;">
+            Order Number
+          </div>
+          <div style="font-size:19px; font-weight:800; color:#171717; letter-spacing:-0.01em; word-break:break-word;">
+            ${order.orderNumber}
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 18px; border-top:1px solid #F5E6D3;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#EA580C; margin-bottom:6px;">
+            Total
+          </div>
+          <div style="font-size:22px; font-weight:800; color:#171717;">
+            ₹${order.total}
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Customer contact -->
+    <h2 style="margin:0 0 12px; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373;">
+      Customer
+    </h2>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #F5E6D3; border-radius:14px; margin-bottom:20px;">
+      <tr>
+        <td style="padding:14px 18px; background:#FDFCFB; border-radius:14px 14px 0 0;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373; margin-bottom:4px;">
+            Name
+          </div>
+          <div style="font-size:14px; font-weight:700; color:#171717;">
+            ${order.customer.name}
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:14px 18px; border-top:1px solid #F5E6D3;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373; margin-bottom:4px;">
+            Phone
+          </div>
+          <div style="font-size:14px; font-weight:700; color:#171717;">
+            <a href="tel:+91${order.customer.phone}" style="color:#EA580C; text-decoration:none;">
+              +91 ${order.customer.phone}
+            </a>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:14px 18px; border-top:1px solid #F5E6D3;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373; margin-bottom:4px;">
+            Email
+          </div>
+          <div style="font-size:13.5px; color:#171717; word-break:break-all;">
+            <a href="mailto:${order.customer.email}" style="color:#EA580C; text-decoration:none;">
+              ${order.customer.email}
+            </a>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Pickup -->
+    <h2 style="margin:0 0 12px; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373;">
+      Pickup
+    </h2>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #F5E6D3; border-radius:14px; margin-bottom:20px;">
+      <tr>
+        <td style="padding:14px 18px; background:#FDFCFB; border-radius:14px 14px 0 0;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373; margin-bottom:4px;">
+            Outlet
+          </div>
+          <div style="font-size:14px; font-weight:700; color:#171717;">
+            ${order.pickup.outletName}
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:14px 18px; border-top:1px solid #F5E6D3;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373; margin-bottom:4px;">
+            Scheduled
+          </div>
+          <div style="font-size:14px; font-weight:700; color:#171717;">
+            ${pickupDateLabel} · ${order.pickup.timeSlotLabel}
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items -->
+    <h2 style="margin:0 0 4px; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#737373;">
+      Items (${order.items.length})
+    </h2>
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:12px;">
+      ${itemsHtml}
+    </table>
+
+    ${
+      order.notes
+        ? `<div style="margin-top:20px; padding:16px; background:#FFF6EC; border-left:3px solid #F97316; border-radius:8px;">
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.14em; color:#EA580C; margin-bottom:6px;">
+              Customer Note
+            </div>
+            <div style="font-size:13.5px; line-height:1.7; color:#404040; font-style:italic;">
+              &ldquo;${order.notes}&rdquo;
+            </div>
+          </div>`
+        : ""
+    }
+
+    <!-- Admin panel CTA -->
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:28px;">
+      <tr>
+        <td align="center">
+          <a href="${env.CLIENT_URL?.split(",")[0]?.trim() || "http://localhost:3000"}/admin/orders/${order.orderNumber}"
+             style="display:inline-block; padding:13px 26px; background:#171717; color:#ffffff; font-size:13px; font-weight:700; text-decoration:none; border-radius:999px;">
+            Open in admin panel →
+          </a>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return sendMail({
+    to: env.EMAIL_USER,
+    subject: `🍔 New order — ${order.orderNumber} · ₹${order.total} · ${order.customer.name}`,
+    html: emailWrapper({
+      title: "New Order",
+      preheader: `${order.orderNumber} · ${order.customer.name} · ₹${order.total} · ${pickupDateLabel}, ${order.pickup.timeSlotLabel}`,
+      bodyHtml,
+    }),
+    text: `New order ${order.orderNumber} from ${order.customer.name} (${order.customer.phone}). Total: ₹${order.total}. Pickup: ${pickupDateLabel}, ${order.pickup.timeSlotLabel}. ${isCounter ? "Collect at counter." : "Paid online."}`,
+    replyTo: order.customer.email,
+  });
+}
