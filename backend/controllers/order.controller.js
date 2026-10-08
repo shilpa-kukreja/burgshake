@@ -3,6 +3,8 @@ import Coupon from "../models/Coupon.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { resolveCoupon } from "../utils/couponUtils.js";
+
+import { notifyAdmin } from "../utils/notifyAdmin.js";
 import {
   createRazorpayOrder,
   verifyRazorpaySignature,
@@ -158,28 +160,26 @@ export async function createOrder(req, res, next) {
     };
 
     /* ═══ PAY AT COUNTER ═══════════════════════════ */
-    if (payment === "counter") {
-      const order = await Order.create({
-        ...orderData,
-        status: "confirmed",
-        paymentStatus: "pending",
-      });
+   if (payment === "counter") {
+  const order = await Order.create({
+    ...orderData,
+    status: "confirmed",
+    paymentStatus: "pending",
+  });
 
-      /* Increment coupon usage now — order is confirmed */
-      if (coupon) {
-        await Coupon.findByIdAndUpdate(coupon._id, {
-          $inc: { usedCount: 1 },
-        });
-      }
+  if (coupon) {
+    await Coupon.findByIdAndUpdate(coupon._id, {
+      $inc: { usedCount: 1 },
+    });
+  }
 
-      return res.status(201).json(
-        new ApiResponse(
-          201,
-          { order },
-          "Order placed. Pay at counter when you pick up."
-        )
-      );
-    }
+  /* 🔔 Counter order → notify admin right away */
+  await notifyAdmin(order);
+
+  return res.status(201).json(
+    new ApiResponse(201, { order }, "Order placed. Pay at counter when you pick up.")
+  );
+}
 
     /* ═══ PAY ONLINE (Razorpay) ════════════════════ */
     /* 1. Create order as pending. Coupon increment happens at verify. */
@@ -259,12 +259,34 @@ export async function verifyOrderPayment(req, res, next) {
       razorpay_signature,
     });
 
-    if (!valid) {
-      order.paymentStatus = "failed";
-      order.status = "cancelled";
-      await order.save();
-      throw new ApiError(400, "Payment verification failed.");
-    }
+   if (!valid) {
+  order.paymentStatus = "failed";
+  order.status = "cancelled";
+  await order.save();
+  /* 🚫 no notify — payment failed */
+  throw new ApiError(400, "Payment verification failed.");
+}
+
+order.paymentStatus = "paid";
+order.status = "confirmed";
+order.razorpay.paymentId  = razorpay_payment_id;
+order.razorpay.signature  = razorpay_signature;
+order.razorpay.paidAt     = new Date();
+await order.save();
+
+if (order.couponCode) {
+  await Coupon.findOneAndUpdate(
+    { couponCode: order.couponCode },
+    { $inc: { usedCount: 1 } }
+  );
+}
+
+/* 🔔 Only here do we notify admin */
+await notifyAdmin(order);
+
+res.json(
+  new ApiResponse(200, { order }, "Payment verified. Order confirmed.")
+);
 
     order.paymentStatus = "paid";
     order.status = "confirmed";
@@ -383,6 +405,44 @@ export async function cancelOrder(req, res, next) {
         "Order cancelled. Refund (if any) will be processed shortly."
       )
     );
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+
+
+
+/* ═══════════════════════════════════════════════════
+   POST /api/orders/payment-failed
+   Called when Razorpay modal is dismissed or fails
+   ═══════════════════════════════════════════════════ */
+export async function markPaymentFailed(req, res, next) {
+  try {
+    const { razorpay_order_id } = req.body;
+    if (!razorpay_order_id) {
+      throw new ApiError(400, "razorpay_order_id required.");
+    }
+
+    const order = await Order.findOne({
+      "razorpay.orderId": razorpay_order_id,
+    });
+
+    if (!order) throw new ApiError(404, "Order not found.");
+
+    /* Idempotency — never overwrite a paid order */
+    if (order.paymentStatus === "paid") {
+      return res.json(new ApiResponse(200, { order }, "Order already paid."));
+    }
+
+    order.paymentStatus = "failed";
+    order.status        = "cancelled";
+    await order.save();
+
+    /* 🚫 no notifyAdmin — failed payments stay invisible */
+
+    res.json(new ApiResponse(200, { order }, "Payment marked as failed."));
   } catch (err) {
     next(err);
   }

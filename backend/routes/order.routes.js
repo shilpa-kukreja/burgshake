@@ -4,6 +4,8 @@ import { body } from "express-validator";
 import {
   createOrder,
   verifyOrderPayment,
+    markPaymentFailed,   // 👈 new
+
   getMyOrders,
   getOrderByNumber,
   cancelOrder,
@@ -86,6 +88,10 @@ Orderrouter.post("/verify", verifyOrderPayment);
 
 /* ── Protected: customer order history ───────────── */
 Orderrouter.get("/my", protect, getMyOrders);
+
+
+Orderrouter.post("/payment-failed", markPaymentFailed);   // 👈 new
+
 
 /* ── Get single order ─────────────────────────────── */
 Orderrouter.get("/:orderNumber", optionalAuth, getOrderByNumber);

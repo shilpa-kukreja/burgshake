@@ -3,6 +3,20 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 /* ═══════════════════════════════════════════════════
+   Base visibility filter — applied to every admin query
+   ─────────────────────────────────────────────────
+   • Counter orders  → always visible (they are confirmed on creation)
+   • Online orders   → visible ONLY after payment succeeds
+   • Failed / pending online orders → hidden from admin entirely
+   ═══════════════════════════════════════════════════ */
+const ADMIN_VISIBLE = {
+  $or: [
+    { payment: "counter" },
+    { payment: "razorpay", paymentStatus: "paid" },
+  ],
+};
+
+/* ═══════════════════════════════════════════════════
    GET /api/admin/orders
    List all orders with filters
    ═══════════════════════════════════════════════════ */
@@ -18,6 +32,8 @@ export async function adminListOrders(req, res, next) {
       limit = 30,
     } = req.query;
 
+    /* All ad-hoc filters go here. The visibility filter is merged
+       later with $and so it can never be accidentally overwritten. */
     const filter = {};
 
     if (status && status !== "all") filter.status = status;
@@ -48,13 +64,22 @@ export async function adminListOrders(req, res, next) {
       ];
     }
 
+    /* 🔑 Merge visibility filter with everything else via $and.
+       This is what hides unpaid online orders from the dashboard. */
+    const finalFilter = {
+      $and: [ADMIN_VISIBLE, filter],
+    };
+
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
     const skip = (pageNum - 1) * limitNum;
 
     const [orders, total] = await Promise.all([
-      Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
-      Order.countDocuments(filter),
+      Order.find(finalFilter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Order.countDocuments(finalFilter),
     ]);
 
     res.json(
@@ -79,6 +104,10 @@ export async function adminListOrders(req, res, next) {
 
 /* ═══════════════════════════════════════════════════
    GET /api/admin/orders/:orderNumber
+   Get a single order
+   ─────────────────────────────────────────────────
+   Admin can still open a pending online order by number
+   (e.g. from a URL) — that's fine, they're admin.
    ═══════════════════════════════════════════════════ */
 export async function adminGetOrder(req, res, next) {
   try {
@@ -114,7 +143,6 @@ export async function adminUpdateOrderStatus(req, res, next) {
     });
     if (!order) throw new ApiError(404, "Order not found.");
 
-    /* Update + push to history in one go */
     order.status = status;
     order.statusHistory.push({
       status,
@@ -148,9 +176,13 @@ export async function adminUpdatePaymentStatus(req, res, next) {
     if (!order) throw new ApiError(404, "Order not found.");
 
     order.paymentStatus = paymentStatus;
+
+    /* When admin marks a counter order as paid, record the time */
     if (paymentStatus === "paid" && order.payment === "counter") {
+      if (!order.razorpay) order.razorpay = {};
       order.razorpay.paidAt = new Date();
     }
+
     await order.save();
 
     res.json(
@@ -179,7 +211,8 @@ export async function adminDeleteOrder(req, res, next) {
 
 /* ═══════════════════════════════════════════════════
    GET /api/admin/orders/stats/summary
-   Dashboard stats
+   Dashboard stats — scoped to ADMIN_VISIBLE so unpaid
+   online orders never inflate the numbers.
    ═══════════════════════════════════════════════════ */
 export async function adminOrderStats(req, res, next) {
   try {
@@ -189,6 +222,11 @@ export async function adminOrderStats(req, res, next) {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
+
+    /* Wrap all stat queries with $and: [ADMIN_VISIBLE, ...] */
+    const withVisible = (extra = {}) => ({
+      $and: [ADMIN_VISIBLE, extra],
+    });
 
     const [
       total,
@@ -203,24 +241,46 @@ export async function adminOrderStats(req, res, next) {
       revenueMonth,
       revenueTotal,
     ] = await Promise.all([
-      Order.countDocuments(),
-      Order.countDocuments({ createdAt: { $gte: startOfToday } }),
-      Order.countDocuments({ createdAt: { $gte: startOfMonth } }),
-      Order.countDocuments({ status: "pending" }),
-      Order.countDocuments({ status: "preparing" }),
-      Order.countDocuments({ status: "ready" }),
-      Order.countDocuments({ status: "completed" }),
-      Order.countDocuments({ status: "cancelled" }),
+      Order.countDocuments(withVisible()),
+      Order.countDocuments(
+        withVisible({ createdAt: { $gte: startOfToday } })
+      ),
+      Order.countDocuments(
+        withVisible({ createdAt: { $gte: startOfMonth } })
+      ),
+      Order.countDocuments(withVisible({ status: "pending" })),
+      Order.countDocuments(withVisible({ status: "preparing" })),
+      Order.countDocuments(withVisible({ status: "ready" })),
+      Order.countDocuments(withVisible({ status: "completed" })),
+      Order.countDocuments(withVisible({ status: "cancelled" })),
       Order.aggregate([
-        { $match: { createdAt: { $gte: startOfToday }, paymentStatus: "paid" } },
+        {
+          $match: {
+            $and: [
+              ADMIN_VISIBLE,
+              { createdAt: { $gte: startOfToday }, paymentStatus: "paid" },
+            ],
+          },
+        },
         { $group: { _id: null, sum: { $sum: "$total" } } },
       ]),
       Order.aggregate([
-        { $match: { createdAt: { $gte: startOfMonth }, paymentStatus: "paid" } },
+        {
+          $match: {
+            $and: [
+              ADMIN_VISIBLE,
+              { createdAt: { $gte: startOfMonth }, paymentStatus: "paid" },
+            ],
+          },
+        },
         { $group: { _id: null, sum: { $sum: "$total" } } },
       ]),
       Order.aggregate([
-        { $match: { paymentStatus: "paid" } },
+        {
+          $match: {
+            $and: [ADMIN_VISIBLE, { paymentStatus: "paid" }],
+          },
+        },
         { $group: { _id: null, sum: { $sum: "$total" } } },
       ]),
     ]);

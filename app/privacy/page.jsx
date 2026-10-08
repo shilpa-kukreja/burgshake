@@ -69,7 +69,7 @@ export default function PrivacyPage() {
       </header>
 
       {/* Body */}
-      <div className="mx-auto mt-14 max-w-7xl px-6 pb-20 lg:mt-20 lg:px-10 lg:pb-28">
+      <div className="mx-auto mt-8 max-w-7xl px-6 pb-20 lg:mt-10 lg:px-10 lg:pb-15">
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
           {/* ToC */}
           <aside className="lg:col-span-3">
@@ -97,7 +97,7 @@ export default function PrivacyPage() {
           <article className="lg:col-span-9">
             <div className="prose prose-neutral max-w-none [&>section]:mt-5 [&>section:first-child]:mt-0 [&>section:not(:first-child)]:border-t [&>section:not(:first-child)]:border-neutral-200/70 [&>section:not(:first-child)]:pt-5 prose-headings:font-display prose-headings:font-bold prose-headings:tracking-[-0.01em] prose-headings:text-neutral-950 prose-h2:mb-5 prose-h2:mt-0 prose-h2:text-[1.5rem] prose-h2:scroll-mt-28 prose-h3:mb-2 prose-h3:mt-8 prose-h3:text-[1.15rem] prose-p:my-4 prose-p:text-[15.5px] prose-p:leading-[1.75] prose-p:text-neutral-700 prose-li:my-1.5 prose-li:text-[15.5px] prose-li:leading-[1.75] prose-li:text-neutral-700 prose-ul:my-4 prose-ol:my-4 prose-strong:font-bold prose-strong:text-neutral-900 prose-a:font-medium prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline">
               <section id="overview">
-                <h2>1. Overview</h2>
+                <h2 className="mb-2">1. Overview</h2>
                 <p>
                   This Privacy Policy explains how Burgshake (&ldquo;we&rdquo;,{" "}
                   &ldquo;us&rdquo;, &ldquo;our&rdquo;) collects, uses, stores,
@@ -115,7 +115,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="collect">
-                <h2>2. What we collect</h2>
+                <h2 className="mb-2">2. What we collect</h2>
                 <p>We collect only the information needed to serve you:</p>
 
                 <h3>2.1 Information you give us</h3>
@@ -176,7 +176,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="use">
-                <h2>3. How we use your information</h2>
+                <h2 className="mb-2"> 3. How we use your information</h2>
                 <p>Your information is used only for these purposes:</p>
                 <ul>
                   <li>
@@ -215,7 +215,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="cookies">
-                <h2>4. Cookies & local storage</h2>
+                <h2 className="mb-2">4. Cookies & local storage</h2>
                 <p>
                   We use two types of client-side storage. Neither is used
                   for tracking or advertising:
@@ -266,7 +266,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="sharing">
-                <h2>5. Who we share your information with</h2>
+                <h2 className="mb-2">5. Who we share your information with</h2>
                 <p>
                   We share your information only with the following
                   processors, and only as much as each one needs:
@@ -318,7 +318,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="security">
-                <h2>6. How we protect your data</h2>
+                <h2 className="mb-2">6. How we protect your data</h2>
                 <ul>
                   <li>
                     All traffic is served over <strong>HTTPS</strong> with
@@ -349,7 +349,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="retention">
-                <h2>7. How long we keep your data</h2>
+                <h2 className="mb-2">7. How long we keep your data</h2>
                 <ul>
                   <li>
                     <strong>Order records</strong> — kept for{" "}
@@ -378,7 +378,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="rights">
-                <h2>8. Your rights</h2>
+                <h2 className="mb-2">8. Your rights</h2>
                 <p>
                   Under the DPDP Act, you have the right to:
                 </p>
@@ -418,7 +418,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="children">
-                <h2>9. Children</h2>
+                <h2 className="mb-2">9. Children</h2>
                 <p>
                   Our services are not intended for children under 18. We do
                   not knowingly collect personal information from minors. If
@@ -428,7 +428,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="contact">
-                <h2>10. Contact us</h2>
+                <h2 className="mb-2">10. Contact us</h2>
                 <p>
                   For any privacy question, request, or complaint:
                 </p>

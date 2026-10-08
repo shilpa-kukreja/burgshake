@@ -127,6 +127,10 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
 
+
+    /* Admin alert guard — prevents double sound/notification */
+    notifiedAdmin: { type: Boolean, default: false, index: true },
+
     /* Timestamps for status changes */
     statusHistory: [
       {

@@ -14,6 +14,7 @@ import {
   FileText
 } from "lucide-react";
 import {resolveImageUrl} from  "../../lib/api"
+import BlogContent from "../../components/BlogContent";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -241,9 +242,10 @@ export default async function BlogDetailPage({ params }) {
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
           {/* ── Main content ───────────────────── */}
           <article className="lg:col-span-8">
-            <div className="prose prose-neutral max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:tracking-[-0.01em] prose-headings:text-neutral-950 prose-h1:mt-12 prose-h1:text-[1.75rem] prose-h2:mt-12 prose-h2:text-[1.5rem] prose-h3:mt-10 prose-h3:text-[1.2rem] prose-h4:mt-8 prose-h4:text-[1.05rem] prose-p:my-5 prose-p:text-[16px] prose-p:leading-[1.8] prose-p:text-neutral-700 prose-a:font-medium prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline prose-strong:font-bold prose-strong:text-neutral-900 prose-em:italic prose-ul:my-5 prose-ol:my-5 prose-li:my-1.5 prose-li:text-[16px] prose-li:leading-[1.75] prose-li:text-neutral-700 prose-blockquote:my-8 prose-blockquote:border-l-4 prose-blockquote:border-brand-500 prose-blockquote:bg-brand-50/40 prose-blockquote:py-2 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:not-italic prose-blockquote:text-[16px] prose-blockquote:text-neutral-700 prose-code:rounded prose-code:bg-neutral-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[14px] prose-code:font-medium prose-code:text-neutral-800 prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:my-6 prose-pre:rounded-2xl prose-pre:bg-neutral-950 prose-pre:p-5 prose-pre:text-[13.5px] prose-pre:leading-[1.7] prose-img:my-8 prose-img:rounded-2xl prose-hr:my-12 prose-hr:border-neutral-200">
+            {/* <div className="prose prose-neutral max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:tracking-[-0.01em] prose-headings:text-neutral-950 prose-h1:mt-12 prose-h1:text-[1.75rem] prose-h2:mt-12 prose-h2:text-[1.5rem] prose-h3:mt-10 prose-h3:text-[1.2rem] prose-h4:mt-8 prose-h4:text-[1.05rem] prose-p:my-5 prose-p:text-[16px] prose-p:leading-[1.8] prose-p:text-neutral-700 prose-a:font-medium prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline prose-strong:font-bold prose-strong:text-neutral-900 prose-em:italic prose-ul:my-5 prose-ol:my-5 prose-li:my-1.5 prose-li:text-[16px] prose-li:leading-[1.75] prose-li:text-neutral-700 prose-blockquote:my-8 prose-blockquote:border-l-4 prose-blockquote:border-brand-500 prose-blockquote:bg-brand-50/40 prose-blockquote:py-2 prose-blockquote:pl-6 prose-blockquote:pr-4 prose-blockquote:not-italic prose-blockquote:text-[16px] prose-blockquote:text-neutral-700 prose-code:rounded prose-code:bg-neutral-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[14px] prose-code:font-medium prose-code:text-neutral-800 prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:my-6 prose-pre:rounded-2xl prose-pre:bg-neutral-950 prose-pre:p-5 prose-pre:text-[13.5px] prose-pre:leading-[1.7] prose-img:my-8 prose-img:rounded-2xl prose-hr:my-12 prose-hr:border-neutral-200">
               <ReactMarkdown>{blog.blogDetail}</ReactMarkdown>
-            </div>
+            </div> */}
+            <BlogContent content={blog.blogDetail} />
 
             {/* Tags footer */}
             {blog.tags?.length > 0 && (

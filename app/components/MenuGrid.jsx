@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import MenuFilter from "./MenuFilter";
 import MenuCard from "./MenuCard";
 import { api } from "../lib/api";
@@ -14,22 +15,75 @@ const SORT_MAP = {
   name: "name",
 };
 
-/* Normalise a backend MenuItem for the card.
-   Cards expect `id`; the backend uses `slug`. */
 function normalize(item) {
   return { ...item, id: item.slug };
 }
 
-export default function MenuGrid() {
+function MenuGridContent() {
+  const searchParams = useSearchParams();
+  const searchParamsString = searchParams.toString();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  /* Initial state comes from the URL so footer links work on first load */
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [active, setActive] = useState("all");
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("recommended");
+  const [active, setActive] = useState(
+    searchParams.get("category") || "all"
+  );
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [sort, setSort] = useState(searchParams.get("sort") || "recommended");
   const [dietary, setDietary] = useState([]);
+
+  /* Track what we last wrote to the URL so we can distinguish
+     "URL changed because we wrote it" from "URL changed externally
+     (e.g. user clicked a footer link)". */
+  const lastWrittenRef = useRef("");
+
+  /* ── READ: URL → state ─────────────────────────
+     Runs whenever the URL query changes. If the change didn't come
+     from our own write, it means something outside updated it (a
+     footer link, back button, pasted URL) — so we adopt its values. */
+  useEffect(() => {
+    /* Our own write — ignore, state already matches */
+    if (searchParamsString === lastWrittenRef.current) return;
+
+    const urlCategory = searchParams.get("category") || "all";
+    const urlSearch = searchParams.get("search") || "";
+    const urlSort = searchParams.get("sort") || "recommended";
+
+    lastWrittenRef.current = searchParamsString;
+
+    if (urlCategory !== active) setActive(urlCategory);
+    if (urlSearch !== search) setSearch(urlSearch);
+    if (urlSort !== sort) setSort(urlSort);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParamsString]);
+
+  /* ── WRITE: state → URL ────────────────────────
+     Runs when a filter changes. Uses `replace` so filter clicks don't
+     pollute browser history, and `scroll: false` so the page doesn't
+     jump to the top. */
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (active !== "all") params.set("category", active);
+    if (search.trim()) params.set("search", search.trim());
+    if (sort !== "recommended") params.set("sort", sort);
+    const qs = params.toString();
+
+    /* Record what we're about to write so the READ effect can skip it */
+    lastWrittenRef.current = qs;
+
+    const newUrl = `${pathname}${qs ? `?${qs}` : ""}`;
+    const currentUrl = `${pathname}${window.location.search}`;
+
+    if (newUrl !== currentUrl) {
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [active, search, sort, pathname, router]);
 
   /* ── Fetch categories once ─────────────────────── */
   useEffect(() => {
@@ -40,28 +94,34 @@ export default function MenuGrid() {
         if (!mounted) return;
         const raw = res.data?.categories || res.data || [];
         const list = raw
-  .filter((c) => c.isActive !== false)
-  .filter((c) => {
-    const slug = (c.slug || "").toLowerCase();
-    const name = (c.name || "").toLowerCase().trim();
-    return slug !== "all" && name !== "all";
-  })
-  .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-  .map((c) => ({
-    id: c.slug,
-    label: c.name,
-    icon: c.icon || null,
-  }));
+          .filter((c) => c.isActive !== false)
+          .filter((c) => {
+            const slug = (c.slug || "").toLowerCase();
+            const name = (c.name || "").toLowerCase().trim();
+            return slug !== "all" && name !== "all";
+          })
+          .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+          .map((c) => ({ id: c.slug, label: c.name, icon: c.icon || null }));
         setCategories([{ id: "all", label: "All" }, ...list]);
       })
       .catch(() => {
-        /* Non-fatal — filter shows only "All" */
         if (mounted) setCategories([{ id: "all", label: "All" }]);
       });
     return () => {
       mounted = false;
     };
   }, []);
+
+  /* ── Guard against a category that doesn't exist ──
+     e.g. someone shares /menu?category=deleted-thing. After categories
+     load, if `active` isn't a real one, fall back to "all". */
+  useEffect(() => {
+    if (categories.length === 0) return;
+    if (active === "all") return;
+    if (!categories.some((c) => c.id === active)) {
+      setActive("all");
+    }
+  }, [categories, active]);
 
   /* ── Fetch items on filter change (debounced) ──── */
   useEffect(() => {
@@ -121,13 +181,7 @@ export default function MenuGrid() {
     sort !== "recommended" ||
     dietary.length > 0;
 
-  /* ── Client-side sort fallback for "recommended" ─ */
-  const displayItems = useMemo(() => {
-    if (sort !== "recommended") return items;
-    /* Backend already sorted by featured → sortOrder → createdAt.
-       Trust it. No client re-sort needed. */
-    return items;
-  }, [items, sort]);
+  const displayItems = useMemo(() => items, [items]);
 
   return (
     <>
@@ -193,10 +247,17 @@ export default function MenuGrid() {
   );
 }
 
-/* ── Loading skeleton ────────────────────────────── */
+export default function MenuGrid() {
+  return (
+    <Suspense fallback={<SkeletonGrid />}>
+      <MenuGridContent />
+    </Suspense>
+  );
+}
+
 function SkeletonGrid() {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-5 py-16 sm:grid-cols-2 sm:py-20 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}

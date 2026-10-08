@@ -68,7 +68,7 @@ export default function TermsPage() {
       </header>
 
       {/* Body */}
-      <div className="mx-auto mt-14 max-w-7xl px-6 pb-20 lg:mt-20 lg:px-10 lg:pb-28">
+      <div className="mx-auto mt-14 max-w-7xl px-6 pb-20 lg:mt-10 lg:px-10 lg:pb-15">
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
           {/* ToC sidebar */}
           <aside className="lg:col-span-3">
@@ -96,7 +96,7 @@ export default function TermsPage() {
           <article className="lg:col-span-9">
             <div className="prose prose-neutral max-w-none [&>section]:mt-5 [&>section:first-child]:mt-0 [&>section:not(:first-child)]:border-t [&>section:not(:first-child)]:border-neutral-200/70 [&>section:not(:first-child)]:pt-5 prose-headings:font-display prose-headings:font-bold prose-headings:tracking-[-0.01em] prose-headings:text-neutral-950 prose-h2:mb-5 prose-h2:mt-0 prose-h2:text-[1.5rem] prose-h2:scroll-mt-28 prose-h3:mb-2 prose-h3:mt-8 prose-h3:text-[1.15rem] prose-p:my-4 prose-p:text-[15.5px] prose-p:leading-[1.75] prose-p:text-neutral-700 prose-li:my-1.5 prose-li:text-[15.5px] prose-li:leading-[1.75] prose-li:text-neutral-700 prose-ul:my-4 prose-ol:my-4 prose-strong:font-bold prose-strong:text-neutral-900 prose-a:font-medium prose-a:text-brand-600 prose-a:no-underline hover:prose-a:underline">
               <section id="acceptance">
-                <h2>1. Acceptance of terms</h2>
+                <h2 className="mb-2">1. Acceptance of terms</h2>
                 <p>
                   These Terms of Service (&ldquo;Terms&rdquo;) form a binding
                   agreement between you (&ldquo;you&rdquo;, &ldquo;your&rdquo;)
@@ -113,7 +113,7 @@ export default function TermsPage() {
               </section>
 
               <section id="about">
-                <h2>2. About us</h2>
+                <h2 className="mb-2">2. About us</h2>
                 <p>
                   Burgshake operates a <strong>takeaway-only</strong> burger
                   kitchen located at:
@@ -143,7 +143,7 @@ export default function TermsPage() {
               </section>
 
               <section id="orders">
-                <h2>3. Orders & pickup</h2>
+                <h2 className="mb-2">3. Orders & pickup</h2>
 
                 <h3>3.1 Placing an order</h3>
                 <p>
@@ -178,7 +178,7 @@ export default function TermsPage() {
               </section>
 
               <section id="pricing">
-                <h2>4. Pricing & payment</h2>
+                <h2 className="mb-2">4. Pricing & payment</h2>
 
                 <h3>4.1 Prices and taxes</h3>
                 <p>
@@ -232,7 +232,7 @@ export default function TermsPage() {
               </section>
 
               <section id="cancellations">
-                <h2>5. Cancellations & refunds</h2>
+                <h2 className="mb-2">5. Cancellations & refunds</h2>
 
                 <h3>5.1 Cancelling an order</h3>
                 <p>
@@ -270,7 +270,7 @@ export default function TermsPage() {
               </section>
 
               <section id="conduct">
-                <h2>6. Acceptable use</h2>
+                <h2 className="mb-2">6. Acceptable use</h2>
                 <p>When using the site, you agree not to:</p>
                 <ul>
                   <li>
@@ -300,7 +300,7 @@ export default function TermsPage() {
               </section>
 
               <section id="liability">
-                <h2>7. Disclaimers & liability</h2>
+                <h2 className="mb-2">7. Disclaimers & liability</h2>
 
                 <h3>7.1 Food allergens</h3>
                 <p>
@@ -332,7 +332,7 @@ export default function TermsPage() {
               </section>
 
               <section id="law">
-                <h2>8. Governing law</h2>
+                <h2 className="mb-2">8. Governing law</h2>
                 <p>
                   These Terms are governed by the laws of India. Any dispute
                   arising from them or from your use of the site is subject
@@ -350,7 +350,7 @@ export default function TermsPage() {
               </section>
 
               <section id="contact">
-                <h2>9. Contact</h2>
+                <h2 className="mb-2">9. Contact</h2>
                 <p>
                   Questions about these Terms or about an order? Reach us at:
                 </p>
