@@ -98,7 +98,7 @@ export default function WhyChooseUs() {
             <div className="group relative h-full min-h-[420px] overflow-hidden rounded-3xl bg-neutral-900 ">
               {/* Image */}
               <img
-                src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1000&q=85"
+                src="/about/image.png"
                 alt="Handcrafted burger"
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-[1.05]"
                 loading="lazy"

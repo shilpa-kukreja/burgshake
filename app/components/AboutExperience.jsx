@@ -33,7 +33,7 @@ export default function AboutExperience() {
           {/* ── Square 1 — The Space ───────────────── */}
           <div className="group relative aspect-square overflow-hidden rounded-3xl bg-neutral-100">
             <img
-              src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1200&q=85"
+              src="/aboutpage/experience1.jpg"
               alt="Warm café interior"
               className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
               loading="lazy"

@@ -9,7 +9,7 @@ export default function FinalCTA() {
       {/* ── Full background image ────────────────────── */}
       <div className="absolute inset-0 -z-10">
         <img
-          src="/burger.gif"
+          src="/gif/GIF.gif"
           alt=""
           className="h-[500px] w-full object-cover"
           loading="lazy"

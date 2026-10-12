@@ -222,7 +222,7 @@ export default async function BlogDetailPage({ params }) {
                 <img
                   src={resolveImageUrl(blog.blogImg)}
                   alt={blog.blogName}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-fit"
                 />
               </div>
             </div>

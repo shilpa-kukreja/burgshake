@@ -191,7 +191,7 @@ export default function Blogs() {
                         <img
                           src={resolveImageUrl(post.img)}
                           alt={post.title}
-                          className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]"
+                          className="h-full w-full object-fill transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]"
                           loading="lazy"
                         />
                       </div>

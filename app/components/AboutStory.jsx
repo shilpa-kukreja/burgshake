@@ -18,7 +18,7 @@ export default function AboutStory() {
               {/* Big image */}
               <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-neutral-100 shadow-[0_30px_70px_-25px_rgba(249,115,22,0.35)]">
                 <img
-                  src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=900&q=85"
+                  src="/aboutpage/about.png"
                   alt="Smashing fresh patties"
                   className="h-full w-full object-cover"
                   loading="lazy"

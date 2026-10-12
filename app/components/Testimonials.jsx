@@ -168,7 +168,7 @@ const REVIEWS = [
     role: "Food Blogger",
     avatar: "https://i.pravatar.cc/120?img=45",
     photo:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80",
+      "/testimonials/1.jpg",
     quote:
       "Every shake is thick and rich — actually tastes like the real thing, never overly sweet.",
     item: "Belgian Choco Shake",
@@ -178,7 +178,7 @@ const REVIEWS = [
     role: "Regular since 2022",
     avatar: "https://i.pravatar.cc/120?img=12",
     photo:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
+      "/testimonials/2.jpg",
     quote:
       "Best burger in the city. Juicy patty, soft bun, and the house sauce ties it all together.",
     item: "The Classic Smash",
@@ -188,7 +188,7 @@ const REVIEWS = [
     role: "Local Guide",
     avatar: "https://i.pravatar.cc/120?img=68",
     photo:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80",
+      "/testimonials/3.jpg",
     quote:
       "The ambience feels like a boutique café in Europe. Warm light, great music, food matches the vibe.",
     item: "Peri Peri Chicken",

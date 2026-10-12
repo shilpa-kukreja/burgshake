@@ -167,7 +167,7 @@ export default function Hero() {
               <div className="absolute inset-[14%] grid place-items-center">
                 <div className="animate-float-slow transition-transform duration-700 ease-out group-hover:scale-[1.03]">
                   <img
-                    src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80"
+                    src="/hero/home.jpg"
                     alt="Handcrafted burger"
                     className="aspect-square w-full rounded-full object-cover shadow-[0_30px_60px_-25px_rgba(249,115,22,0.55)] ring-[8px] ring-white transition-shadow duration-500 group-hover:shadow-[0_45px_80px_-25px_rgba(249,115,22,0.65)]"
                     loading="eager"
