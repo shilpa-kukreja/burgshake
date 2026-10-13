@@ -33,7 +33,7 @@ export default function AboutExperience() {
           {/* ── Square 1 — The Space ───────────────── */}
           <div className="group relative aspect-square overflow-hidden rounded-3xl bg-neutral-100">
             <img
-              src="/aboutpage/experience1.jpg"
+              src="/aboutpage/experience1.jpeg"
               alt="Warm café interior"
               className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
               loading="lazy"
@@ -57,7 +57,7 @@ export default function AboutExperience() {
           {/* ── Square 2 — The Craft ───────────────── */}
           <div className="group relative aspect-square overflow-hidden rounded-3xl bg-neutral-100">
             <img
-              src="https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&w=900&q=85"
+              src="/aboutpage/experience2.jpeg"
               alt="Chef hands at work"
               className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
               loading="lazy"
@@ -81,7 +81,7 @@ export default function AboutExperience() {
           {/* ── Square 3 — The People ──────────────── */}
           <div className="group relative aspect-square overflow-hidden rounded-3xl bg-neutral-100 sm:col-span-2 lg:col-span-1">
             <img
-              src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=85"
+              src="/aboutpage/experience3.jpeg"
               alt="Happy customers"
               className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.05]"
               loading="lazy"
