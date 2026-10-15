@@ -45,19 +45,18 @@ export default function Subscribe() {
           <div className="flex-1">
             <div className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-600">
               <span className="h-px w-6 bg-brand-500" />
-              The Burgshake Letter
+              The BurgShake Club
             </div>
 
             <h3 className="mt-2.5 font-display text-[19px] font-bold leading-[1.25] tracking-[-0.015em] text-neutral-950 sm:text-[21px]">
-              Get new flavours first —{" "}
+              Get the latest bites and sips —{" "}
               <span className="font-serif italic font-normal text-brand-500">
-                straight to your inbox.
+                delivered straight to your inbox.
               </span>
             </h3>
 
             <p className="mt-2 text-[13px] leading-[1.6] text-neutral-500">
-              Seasonal drops, secret offers, and behind-the-grill stories.
-              No spam, ever.
+              Be the first to discover new burger creations, creamy shake favourites, irresistible fries, and exclusive offers.
             </p>
           </div>
 

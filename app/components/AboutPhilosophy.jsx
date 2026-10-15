@@ -3,18 +3,18 @@
 const PILLARS = [
   {
     no: "01",
-    title: "Fire & Patience",
-    desc: "Every patty pressed, seared, and rested to order. Never pre-cooked.",
+    title: "Taste Comes First",
+    desc: "Every burger, shake, and side is crafted to deliver bold flavours and a satisfying experience.",
   },
   {
     no: "02",
-    title: "Fresh or Nothing",
-    desc: "Buns baked daily, produce locally sourced, cheese sliced same morning.",
+    title: "Quality in Every Bite",
+    desc: "We focus on quality ingredients, delicious combinations, and the little details that make every order special.",
   },
   {
     no: "03",
-    title: "Built for People",
-    desc: "Designed around how you actually eat — quick, warm, and worth the walk.",
+    title: "Made for Every Craving",
+    desc: "From juicy burgers to creamy shakes and crispy golden fries, we bring your comfort-food favourites together in one place.",
   },
 ];
 

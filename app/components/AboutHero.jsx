@@ -1,4 +1,3 @@
-
 "use client";
 
 export default function AboutHero() {
@@ -36,15 +35,15 @@ export default function AboutHero() {
           {/* Heading */}
           <div className="max-w-xl">
             <h1 className="mt-4 font-display text-[2rem] font-bold leading-[1.08] tracking-[-0.02em] text-white sm:text-[2.5rem] lg:text-[3rem]">
-              Made by hand.{" "}
+              Made with passion.{" "}
               <span className="font-serif font-normal italic text-brand-300">
-                Served with heart.
+                Loved in every bite.
               </span>
             </h1>
 
             <p className="mt-4 max-w-md text-[14px] leading-[1.7] text-white/75 sm:text-[15px]">
-              We&apos;re a small takeaway café with one mission — to make the
-              kind of burger you&apos;d drive across town for.
+              At BurgShake, we bring together juicy, flavour-packed burgers,
+              creamy shakes, and crispy golden fries to satisfy every craving.
             </p>
           </div>
 

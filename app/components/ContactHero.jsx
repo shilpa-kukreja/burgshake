@@ -1,4 +1,3 @@
-
 "use client";
 
 export default function ContactHero() {
@@ -35,15 +34,17 @@ export default function ContactHero() {
         <div className="flex w-full flex-col items-start justify-between gap-4 sm:flex-row sm:items-end sm:gap-6">
           <div className="max-w-xl">
             <h1 className="mt-4 font-display text-[2rem] font-bold leading-[1.08] tracking-[-0.02em] text-white sm:text-[2.5rem] lg:text-[3rem]">
-              Come say hello.{" "}
+              Let’s talk burgers.{" "}
               <span className="font-serif font-normal italic text-brand-300">
-                We&apos;ll be here.
+                We&apos;are here.
               </span>
             </h1>
 
-            <p className="mt-4 max-w-md text-[14px] leading-[1.7] text-white/75 sm:text-[15px]">
-              Questions, feedback, bulk orders, or just want to talk burgers?
-              We&apos;d love to hear from you.
+            <p className="mt-4 max-w-2xl text-[14px] leading-[1.7] text-white/75 sm:text-[15px]">
+              Have a question, feedback to share, or an enquiry about bulk
+              orders? Get in touch with BurgShake. We’re always happy to talk
+              great food, delicious shakes, and everything that makes your next
+              bite special.
             </p>
           </div>
         </div>

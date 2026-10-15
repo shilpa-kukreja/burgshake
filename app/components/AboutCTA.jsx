@@ -23,15 +23,14 @@ export default function AboutCTA() {
           </div>
 
           <h2 className="max-w-xl font-display text-[1.75rem] font-bold leading-[1.12] tracking-[-0.02em] text-neutral-950 sm:text-[2rem]">
-            Same burgers. Same craft.{" "}
+            Same great taste.{" "}
             <span className="font-serif italic font-normal text-brand-500">
-              Your table or ours.
+             Your next favourite meal awaits.
             </span>
           </h2>
 
-          <p className="max-w-md text-[14px] leading-[1.7] text-neutral-500">
-            Order online and collect fresh from our Bandra counter in about 15
-            minutes.
+          <p className="max-w-2xl text-[14px] leading-[1.7] text-neutral-500">
+           Explore the BurgShake menu and discover juicy burgers, creamy shakes, and crispy golden fries made for every craving. Your next delicious moment is just a click away.
           </p>
 
           <div className="mt-2 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">

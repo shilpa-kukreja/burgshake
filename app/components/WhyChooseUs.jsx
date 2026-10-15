@@ -15,26 +15,26 @@ const FEATURES = [
   {
     no: "01",
     icon: ChefHat,
-    title: "Smashed to Order",
-    desc: "Every patty hits the griddle only after you order — never pre-cooked.",
+    title: "Made Fresh to Order",
+    desc: "Every burger is prepared with care to deliver a satisfying bite packed with flavour.",
   },
   {
     no: "02",
     icon: SlidersHorizontal,
-    title: "Build It Your Way",
-    desc: "Choose bun, patty, cheese, sauces, and heat. Your burger, your rules.",
+    title: "Made for Every Craving",
+    desc: "From delicious burgers to creamy shakes and crispy fries, find your favourite combination.",
   },
   {
     no: "03",
     icon: Wheat,
-    title: "Buns Baked Daily",
-    desc: "Brioche baked fresh every morning. Real cheese that melts just right.",
+    title: "Flavour in Every Bite",
+    desc: "Enjoy satisfying textures, delicious combinations, and the flavours that make every bite memorable.",
   },
   {
     no: "04",
     icon: Flame,
-    title: "Flame-Kissed Flavor",
-    desc: "A signature char from our open flame — the difference you can taste.",
+    title: "Your Comfort Food Fix",
+    desc: "Whether it's a quick snack or a meal with friends, BurgShake makes every craving worth enjoying.",
   },
 ];
 
@@ -129,14 +129,14 @@ export default function WhyChooseUs() {
 
               {/* Bottom content */}
               <div className="absolute inset-x-0 bottom-0 p-6 sm:p-7">
-                <div className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-brand-300">
+                {/* <div className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-brand-300">
                   Since 2022
-                </div>
+                </div> */}
                 <h3 className="mt-2 font-display text-[22px] font-bold leading-[1.15] tracking-[-0.015em] text-white sm:text-[24px]">
-                  Built fresh,
+                 Good food,
                   <br />
                   <span className="font-serif italic font-normal text-brand-200">
-                    every single time.
+                    great moments.
                   </span>
                 </h3>
 

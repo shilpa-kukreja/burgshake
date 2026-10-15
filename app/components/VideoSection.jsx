@@ -199,17 +199,16 @@ export default function VideoShowcase() {
       <div className="mx-auto mb-12 max-w-3xl px-6 text-center sm:mb-16">
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-700">
           <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-          Watch what we&apos;re cooking
+         A TASTE OF BURGSHAKE
         </div>
         <h2 className="font-display text-[2rem] font-bold leading-[1.1] tracking-[-0.02em] text-neutral-950 sm:text-[2.6rem]">
-          Every bite has a{" "}
+          Cravings in Motion.{" "}
           <span className="font-serif italic font-normal text-brand-500">
-            story.
+            Flavour in Every Frame.
           </span>
         </h2>
-        <p className="mx-auto mt-4 max-w-lg text-[14.5px] leading-[1.7] text-neutral-600">
-          A look inside the Burgshake kitchen — sizzle, shake, and serve.
-        </p>
+        <p className="mx-auto mt-4 max-w-2xl text-[14.5px] leading-[1.7] text-neutral-600">
+Get a closer look at the burgers you crave, the shakes you love, and the crispy fries that complete every meal. Welcome to the delicious side of BurgShake.        </p>
       </div>
 
       {/* 3D Carousel */}

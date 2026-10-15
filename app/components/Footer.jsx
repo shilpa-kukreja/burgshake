@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  MapPin,
-  Phone,
-  Mail,
-  ArrowUpRight,
-  Clock,
-} from "lucide-react";
+import { MapPin, Phone, Mail, ArrowUpRight, Clock } from "lucide-react";
 import { api } from "../lib/api";
 
 /* ─── Social icons ──────────────────────────────────── */
@@ -62,36 +56,6 @@ function TwitterIcon({ className = "h-4 w-4" }) {
   );
 }
 
-/* ─── Store hours ──────────────────────────────────── */
-const OPEN_HOUR = 11; // 11:00 AM
-const CLOSE_HOUR = 23; // 11:00 PM
-
-/* Return { isOpen, label } for the current time */
-function getOpenStatus() {
-  const now = new Date();
-  const h = now.getHours() + now.getMinutes() / 60;
-
-  if (h >= OPEN_HOUR && h < CLOSE_HOUR) {
-    const minsLeft = Math.round((CLOSE_HOUR - h) * 60);
-    const label =
-      minsLeft < 60
-        ? `Closes in ${minsLeft} min`
-        : `Closes at 11 PM`;
-    return { isOpen: true, label };
-  }
-
-  /* Closed. Show when it opens next. */
-  if (h < OPEN_HOUR) {
-    const mins = Math.round((OPEN_HOUR - h) * 60);
-    const label =
-      mins <= 60 ? `Opens in ${mins} min` : "Opens at 11 AM";
-    return { isOpen: false, label };
-  }
-
-  /* After midnight, opens tomorrow */
-  return { isOpen: false, label: "Opens tomorrow at 11 AM" };
-}
-
 /* ─── Static groups ────────────────────────────────── */
 const SOCIALS = [
   { Icon: InstagramIcon, href: "https://instagram.com", label: "Instagram" },
@@ -117,14 +81,7 @@ const SUPPORT_LINKS = [
 
 /* ─── Component ────────────────────────────────────── */
 export default function Footer() {
-  const [status, setStatus] = useState(() => getOpenStatus());
   const [categories, setCategories] = useState([]);
-
-  /* Refresh open/closed badge every minute */
-  useEffect(() => {
-    const id = setInterval(() => setStatus(getOpenStatus()), 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
 
   /* Fetch live menu categories once */
   useEffect(() => {
@@ -158,34 +115,27 @@ export default function Footer() {
           {/* ── Brand column ────────────────────────── */}
           <div className="lg:col-span-4">
             <Link href="/" className="group flex shrink-0 items-center">
-          <img
-            src="/logo.png"
-            alt="Burgshake"
-            className="h-17 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-          />
-        </Link>
+              <img
+                src="/logo.png"
+                alt="Burgshake"
+                className="h-17 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+            </Link>
 
             <p className="mt-5 max-w-sm text-[14px] leading-[1.7] text-neutral-500">
-              Handcrafted burgers and velvety thick shakes — made fresh to
-              order, served warm in a café built for slow bites.
+              BurgShake brings together juicy, flavour-packed burgers, creamy
+              thick shakes, and crispy golden fries for the ultimate
+              comfort-food experience.
             </p>
 
-            {/* Live open/closed badge */}
-            <div
-              className={`mt-6 inline-flex items-center gap-2.5 rounded-full px-3 py-1.5 transition-colors ${
-                status.isOpen
-                  ? "border border-emerald-300 bg-emerald-500"
-                  : "border border-neutral-300 bg-neutral-500"
-              }`}
-            >
+            {/* Static open badge */}
+            <div className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-emerald-300 bg-emerald-500 px-3 py-1.5">
               <span className="relative flex h-1.5 w-1.5">
-                {status.isOpen && (
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-200 opacity-75" />
-                )}
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-200 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
               </span>
               <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-white">
-                {status.isOpen ? "Open" : "Closed"} · {status.label}
+                Opening Hours: 11:00 AM – 11:00 PM
               </span>
             </div>
 
@@ -330,7 +280,7 @@ export default function Footer() {
       <div className="relative mx-auto mt-8 max-w-7xl border-t border-neutral-200/70 px-6 py-6 lg:px-10">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-[12px] font-medium text-neutral-500">
-            © {new Date().getFullYear()} Burgshake. Crafted with care in Mumbai.
+            © {new Date().getFullYear()} BurgShake. Made for burger lovers and shake enthusiasts.
           </p>
 
           <div className="flex items-center gap-5 text-[12px] font-medium text-neutral-500">

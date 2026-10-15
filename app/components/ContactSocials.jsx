@@ -78,7 +78,7 @@ export default function ContactSocials() {
             <span className="h-px w-6 bg-brand-500" />
           </div> */}
           <h2 className="mt-4 font-display text-[1.85rem] font-bold leading-[1.12] tracking-[-0.02em] text-neutral-950 sm:text-[2.15rem]">
-            More of us,{" "}
+            More of BurgShake,{" "}
             <span className="font-serif italic font-normal text-brand-500">
               in your feed.
             </span>

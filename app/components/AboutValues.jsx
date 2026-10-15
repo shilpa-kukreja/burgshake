@@ -6,17 +6,17 @@ const VALUES = [
   {
     Icon: Award,
     title: "Quality",
-    desc: "We'd rather remove something from the menu than compromise on how it's made. Every ingredient earns its place.",
+    desc: "We believe great food starts with great taste. Every burger, shake, and side is chosen with care to deliver a satisfying experience in every order.",
   },
   {
     Icon: Lightbulb,
     title: "Creativity",
-    desc: "Our specials change with the seasons, our sauces are made in-house, and our shakes never came from a powder.",
+    desc: "We love bringing exciting flavours together, creating delicious combinations, and making your favourite comfort foods even more enjoyable.",
   },
   {
     Icon: HandHeart,
     title: "Hospitality",
-    desc: "Great food only matters if the people around it feel welcome. Warm greetings, warm food, warm goodbyes.",
+    desc: "Every guest matters. We’re here to make every visit welcoming, every order enjoyable, and every BurgShake moment worth remembering.",
   },
 ];
 

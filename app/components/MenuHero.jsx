@@ -39,17 +39,16 @@ export default function MenuHero() {
       <div className="absolute inset-0 z-10 mx-auto flex max-w-7xl items-end px-6 pb-10 lg:px-10 lg:pb-12">
         <div className="flex w-full flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
           {/* Left: Heading */}
-          <div className="max-w-xl">
+          <div className="max-w-2xl">
             <h1 className="mt-4 font-display text-[1.9rem] font-bold leading-[1.08] tracking-[-0.02em] text-white sm:text-[2.4rem] lg:text-[2.9rem]">
-              Everything we{" "}
+              Every craving,{" "}
               <span className="font-serif italic font-normal text-brand-300">
-                make fresh.
+                made delicious.
               </span>
             </h1>
 
-            <p className="mt-4 max-w-md text-[14px] leading-[1.7] text-white/75 sm:text-[15px]">
-              Burgers, shakes, sides, and cold drinks — every item built to
-              order, ready for takeaway in under 15 minutes.
+            <p className="mt-4 max-w-2xl text-[14px] leading-[1.7] text-white/75 sm:text-[15px]">
+            Explore our menu of juicy, flavour-packed burgers, creamy thick shakes, and crispy golden fries. Freshly prepared and full of flavour, every order brings you a little closer to your next favourite bite.
             </p>
           </div>
         </div>

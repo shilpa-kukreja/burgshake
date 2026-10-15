@@ -60,24 +60,24 @@ export default function AboutStory() {
 
             <div className="mt-6 space-y-4 text-[14.5px] leading-[1.8] text-neutral-600">
               <p>
-                Burgshake began as a weekend passion project — two friends, a
-                tiny griddle, and a stubborn belief that burgers deserved
-                better. We spent months perfecting one recipe: the smash. The
-                right beef, the right bun, the right sauce, in the right order.
+                BurgShake was born from a simple love for great food and the
+                belief that every craving deserves something delicious. From
+                juicy, flavour-packed burgers to creamy shakes and crispy golden
+                fries, our focus has always been on bringing satisfying flavours
+                together.
               </p>
 
               <p>
-                Word spread fast. Soon a handful of regulars became a queue
-                down the street. We opened our first takeaway counter in Bandra
-                in 2022 with a simple promise — everything made fresh, nothing
-                pre-made, and every order ready in under 15 minutes.
+                Every item on our menu is inspired by the joy of good food, bold
+                flavours, and those little moments that make a meal memorable.
+                We believe great taste doesn't need to be complicated—it just
+                needs the right ingredients and a passion for serving something
+                special.
               </p>
 
               <p>
-                Four years later, the same promise still runs the kitchen.
-                We&apos;ve grown the menu, the team, and the space — but the
-                burger you get today is built exactly the way it was on day
-                one.
+                Today, BurgShake continues to bring burger lovers and shake
+                enthusiasts together, one delicious bite and sip at a time.
               </p>
             </div>
 

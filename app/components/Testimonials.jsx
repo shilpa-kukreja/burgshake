@@ -170,7 +170,7 @@ const REVIEWS = [
     photo:
       "/testimonials/1.jpg",
     quote:
-      "Every shake is thick and rich — actually tastes like the real thing, never overly sweet.",
+      "Rich, creamy, and full of chocolate flavour! The shake was a perfect treat when I wanted something sweet and satisfying. Definitely a great pick for chocolate lovers.",
     item: "Belgian Choco Shake",
   },
   {
@@ -180,7 +180,7 @@ const REVIEWS = [
     photo:
       "/testimonials/2.jpg",
     quote:
-      "Best burger in the city. Juicy patty, soft bun, and the house sauce ties it all together.",
+      "A satisfying burger with a delicious combination of flavours and textures. The soft bun, cheesy goodness, and tasty sauce make it the kind of burger you want to come back for.",
     item: "The Classic Smash",
   },
   {
@@ -190,7 +190,7 @@ const REVIEWS = [
     photo:
       "/testimonials/3.jpg",
     quote:
-      "The ambience feels like a boutique café in Europe. Warm light, great music, food matches the vibe.",
+      "If you love bold flavours, this is one to try! The peri peri flavour brings a delicious kick, making every bite feel exciting. A great choice when you're craving something different.",
     item: "Peri Peri Chicken",
   },
 ];
@@ -231,12 +231,12 @@ export default function Testimonials() {
           <div>
             <div className="inline-flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-brand-600">
               <span className="h-px w-8 bg-brand-500" />
-              Kind Words
+              REAL LOVE, REAL CRAVINGS
             </div>
             <h2 className="mt-3 font-display text-[1.7rem] font-bold leading-[1.12] tracking-[-0.02em] text-neutral-950 sm:text-[2rem]">
-              Loved on every{" "}
+              Good Food.{" "}
               <span className="font-serif italic font-normal text-brand-500">
-                visit.
+                Happy Customers.
               </span>
             </h2>
           </div>

@@ -56,9 +56,9 @@ export default function Hero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-500" />
               </span>
-              <span>Now Open</span>
-              <span className="h-3 w-px bg-neutral-200" />
-              <span className="text-neutral-500">Takeaway Only</span>
+              <span>THE ULTIMATE COMFORT FOOD EXPERIENCE</span>
+              {/* <span className="h-3 w-px bg-neutral-200" /> */}
+              {/* <span className="text-neutral-500">Takeaway Only</span> */}
             </div>
 
             {/* Headline */}
@@ -67,14 +67,13 @@ export default function Hero() {
               <br />
               <span className="text-brand-500">shakes</span>{" "}
               <span className="font-serif italic font-normal text-neutral-700">
-                &amp; good vibes.
+                &amp; crispy fries..
               </span>
             </h1>
 
             {/* Subtext */}
-            <p className="mt-6 max-w-[26rem] text-[15px] leading-[1.65] text-neutral-500">
-              Bold, juicy burgers and velvety thick shakes — crafted with
-              premium ingredients and ready for pickup in under 15 minutes.
+            <p className="mt-6 max-w-[40rem] text-[15px] leading-[1.65] text-neutral-500">
+             Craving something delicious? BurgShake brings your favourite comfort foods together with mouth-watering burgers, creamy shakes, and golden, crispy French fries. Whether it’s a quick bite, a meal with friends, or a treat-yourself moment, make every craving count with flavours worth coming back for.
             </p>
 
             {/* CTAs */}
@@ -87,7 +86,7 @@ export default function Hero() {
                 {/* <ShoppingBag className="relative h-4 w-4" /> */}
                 <UtensilsCrossed className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 " />
 
-                <span className="relative"> View Menu</span>
+                <span className="relative">Explore Our Menu</span>
 
                 <ArrowRight className="relative h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
               </Link>

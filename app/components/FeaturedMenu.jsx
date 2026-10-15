@@ -143,9 +143,9 @@ export default function FeaturedMenu() {
             </div>
 
             <h2 className="mt-4 font-display text-3xl font-bold leading-[1.1] tracking-[-0.02em] text-neutral-950 sm:text-4xl lg:text-[2.6rem]">
-              Crafted favourites,{" "}
+              The Favourites{" "}
               <span className="font-serif italic font-normal text-brand-500">
-                loved daily.
+               Everyone Craves.
               </span>
             </h2>
           </div>

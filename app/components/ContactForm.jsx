@@ -147,8 +147,7 @@ export default function ContactForm() {
             </h2>
 
             <p className="mt-4 max-w-md text-[14px] leading-[1.75] text-neutral-500">
-              Drop by the counter, give us a ring, or use the form. We usually
-              reply within a few hours during business hours.
+              We’re here to make your experience as satisfying as every bite.
             </p>
 
             {/* Info tiles */}
@@ -249,10 +248,10 @@ export default function ContactForm() {
                 />
                 <div className="relative">
                   <div className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-brand-600">
-                    Send a Message
+                    Get in Touch
                   </div>
                   <h3 className="mt-2 font-display text-[20px] font-bold leading-tight tracking-[-0.015em] text-neutral-950 sm:text-[22px]">
-                    Fill in the form — we&apos;ll take it from there.
+                    Tell us what’s on your mind.
                   </h3>
                 </div>
               </div>
@@ -360,7 +359,7 @@ export default function ContactForm() {
                       onChange={(e) =>
                         update("message", e.target.value.slice(0, 500))
                       }
-                      placeholder="Tell us what's on your mind…"
+                      placeholder="Have a question, suggestion, or craving-related enquiry? Tell us about it…"
                       className={`w-full resize-none rounded-2xl border bg-white py-3.5 pl-11 pr-4 text-[13.5px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none transition-all duration-300 focus:ring-4 ${
                         errors.message
                           ? "border-red-300 focus:border-red-400 focus:ring-red-100"

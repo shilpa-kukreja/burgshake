@@ -32,7 +32,6 @@ export default function FinalCTA() {
       {/* ── Content ─────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-6 py-12 sm:py-10 lg:px-10 lg:py-12">
         <div className="grid items-center gap-14 lg:grid-cols-12 lg:gap-10">
-
           {/* ── LEFT: Copy ───────────────────────────── */}
           <div className="text-center lg:col-span-7 lg:text-left">
             {/* Eyebrow */}
@@ -41,23 +40,22 @@ export default function FinalCTA() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-300 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-400" />
               </span>
-              Ready in 15 minutes
+              Ready for Your Next Craving?
             </div>
 
             {/* Headline */}
             <h2 className="mt-6 font-display text-[2.1rem] font-bold leading-[1.05] tracking-[-0.02em] text-white sm:text-[2.6rem] lg:text-[3.2rem]">
-              Hungry yet?{" "}
-              <br className="hidden sm:block" />
+              Hungry yet? <br className="hidden sm:block" />
               <span className="font-serif italic font-normal text-white/90">
-                Your order&apos;s
+                Your next favourite bite is waiting.
               </span>{" "}
-              waiting.
             </h2>
 
             {/* Subtext */}
             <p className="mx-auto mt-6 max-w-lg text-[15px] leading-[1.7] text-white/75 lg:mx-0">
-              Skip the wait — order ahead, pick a time slot, and collect your
-              favourite burgers &amp; shakes fresh from the counter.
+              From juicy burgers and creamy shakes to crispy golden fries, your
+              cravings deserve something delicious. Explore the BurgShake menu
+              and find your perfect comfort-food combination.
             </p>
 
             {/* CTAs */}
@@ -97,11 +95,11 @@ export default function FinalCTA() {
               {/* Small header */}
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
-                  Today at Burgshake
+                  Your BurgShake
                 </span>
                 <span className="flex items-center gap-1.5 rounded-full bg-brand-400 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-[0.14em] text-white">
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-200" />
-                  Open now
+                 Check Today’s Hours
                 </span>
               </div>
 
@@ -113,10 +111,10 @@ export default function FinalCTA() {
                   </div>
                   <div className="leading-tight">
                     <div className="text-[13px] font-bold text-white">
-                      Avg 15 min pickup
+                      Pickup Time
                     </div>
                     <div className="mt-1 text-[11.5px] text-white/60">
-                      We message when your order is ready.
+                      Check the estimated preparation time when placing your order.
                     </div>
                   </div>
                 </div>
@@ -127,10 +125,10 @@ export default function FinalCTA() {
                   </div>
                   <div className="leading-tight">
                     <div className="text-[13px] font-bold text-white">
-                      Made fresh to order
+                      Made with Care
                     </div>
                     <div className="mt-1 text-[11.5px] text-white/60">
-                      Never pre-made, never reheated.
+                      Discover flavour-packed burgers, indulgent shakes, and satisfying sides.
                     </div>
                   </div>
                 </div>

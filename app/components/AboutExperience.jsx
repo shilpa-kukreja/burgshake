@@ -23,7 +23,7 @@ export default function AboutExperience() {
           <h2 className="mt-4 font-display text-[1.85rem] font-bold leading-[1.12] tracking-[-0.02em] text-neutral-950 sm:text-[2.15rem]">
             More than food —{" "}
             <span className="font-serif italic font-normal text-brand-500">
-              it&apos;s an experience.
+              it&apos;s a feeling worth coming back for.
             </span>
           </h2>
         </div>
@@ -45,11 +45,12 @@ export default function AboutExperience() {
                 The Space
               </div>
               <h3 className="mt-2 font-display text-[17px] font-bold leading-tight tracking-[-0.01em] sm:text-[19px]">
-                A café built for slow bites
+                A place for every craving
               </h3>
               <p className="mt-2 max-w-md text-[12.5px] leading-[1.6] text-white/75">
-                Warm lights, curated music, and a counter you&apos;ll want to
-                linger at.
+                A welcoming spot to enjoy your favourite burgers, creamy shakes,
+                and crispy fries, whether you're grabbing a quick bite or
+                catching up with friends.
               </p>
             </div>
           </div>
@@ -69,11 +70,12 @@ export default function AboutExperience() {
                 The Craft
               </div>
               <h3 className="mt-2 font-display text-[17px] font-bold leading-tight tracking-[-0.01em] sm:text-[19px]">
-                Built to order, every time
+                Flavour in every detail
               </h3>
               <p className="mt-2 max-w-md text-[12.5px] leading-[1.6] text-white/75">
-                Nothing sits under a heat lamp. Every burger is smashed when
-                you order it.
+                From juicy, flavour-packed burgers to indulgent shakes, every
+                menu favourite is all about great taste and a satisfying
+                experience.
               </p>
             </div>
           </div>
@@ -93,11 +95,11 @@ export default function AboutExperience() {
                 The People
               </div>
               <h3 className="mt-2 font-display text-[17px] font-bold leading-tight tracking-[-0.01em] sm:text-[19px]">
-                Regulars who became friends
+                Good food brings us together
               </h3>
               <p className="mt-2 max-w-md text-[12.5px] leading-[1.6] text-white/75">
-                Week-one faces, weekend rituals, and a counter that knows your
-                usual.
+                From first-time visitors to familiar faces, BurgShake is about
+                sharing delicious moments and making every visit feel special.
               </p>
             </div>
           </div>
@@ -111,8 +113,8 @@ export default function AboutExperience() {
           />
           <blockquote className="mt-6">
             <p className="font-serif text-[1.25rem] italic leading-[1.5] tracking-[-0.005em] text-neutral-900 sm:text-[1.5rem] sm:leading-[1.45]">
-              &ldquo;We don&apos;t think of ourselves as a burger shop. We
-              think of ourselves as a daily ritual for the neighbourhood.&rdquo;
+              We believe great food does more than satisfy a craving — it brings
+              people together, one delicious bite at a time.
             </p>
           </blockquote>
           <figcaption className="mt-6 text-[10.5px] font-bold uppercase tracking-[0.18em] text-neutral-400">
