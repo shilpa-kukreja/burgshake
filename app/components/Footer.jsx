@@ -118,7 +118,7 @@ export default function Footer() {
               <img
                 src="/logo.png"
                 alt="Burgshake"
-                className="h-17 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </Link>
 

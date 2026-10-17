@@ -64,9 +64,12 @@ export default function IntroSection() {
       {/* ── Floating mascot straddling the boundary ───── */}
       <div className="pointer-events-none absolute left-1/2 top-[-1.5rem] z-50 -translate-x-1/2 -translate-y-1/2 sm:left-auto sm:right-8 sm:translate-x-0 lg:right-14">
         <div className="animate-float-y-slow">
-          <img
-            src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=400&q=80"
-            alt="Burger"
+          <video
+            src="/burger.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
             className="h-24 w-24 rounded-full object-cover ring-4 ring-white/60 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] sm:h-32 sm:w-32 lg:h-40 lg:w-40"
           />
         </div>
@@ -148,11 +151,10 @@ export default function IntroSection() {
             together the flavours people love, from deliciously satisfying
             burgers and refreshing shakes to perfectly crispy French fries.
             <br />
-            Whether you're stopping by for a quick snack or looking for a satisfying meal,{" "}
-            <span className="font-semibold text-neutral-900">
-              BurgShake{" "}
-            </span>
-           is your destination for{" "}
+            Whether you're stopping by for a quick snack or looking for a
+            satisfying meal,{" "}
+            <span className="font-semibold text-neutral-900">BurgShake </span>
+            is your destination for{" "}
             <span className="font-bold text-brand-600">
               feel-good food, bold cravings, and memorable bites.
             </span>
@@ -199,7 +201,7 @@ export default function IntroSection() {
               href="/about"
               className="group inline-flex items-center justify-center gap-2 rounded-full border border-neutral-300 bg-white px-6 py-3.5 text-sm font-bold text-neutral-900 transition-all duration-300 hover:border-neutral-950 hover:bg-neutral-50"
             >
-             Discover Our Story
+              Discover Our Story
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Link>
           </div>

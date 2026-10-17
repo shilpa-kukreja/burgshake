@@ -318,12 +318,12 @@ export default function Testimonials() {
 
                 {/* Attribution */}
                 <figcaption className="mt-4 flex items-center gap-3">
-                  <img
+                  {/* <img
                     src={r.avatar}
                     alt={r.name}
                     className="h-9 w-9 rounded-full object-cover ring-2 ring-white/25"
                     loading="lazy"
-                  />
+                  /> */}
                   <div className="leading-tight">
                     <div className="text-[13px] font-bold text-white">
                       {r.name}

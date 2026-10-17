@@ -76,7 +76,7 @@ export default function Navbar() {
           <img
             src="/logo.png"
             alt="Burgshake"
-            className="h-15 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            className="h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
           />
         </Link>
 
