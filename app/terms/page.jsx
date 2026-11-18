@@ -786,11 +786,11 @@ export default function TermsPage() {
                 <p>
                   Customers are encouraged to review our Privacy Policy
                   available at:{" "}
-                  <strong>www.burgshake.com/privacy-policy</strong>.
+                  <strong>www.burgshake.com/privacy</strong>.
                 </p>
-                <p className="not-prose mt-3 rounded-xl border border-dashed border-neutral-300 bg-white/60 px-4 py-3 text-[12.5px] italic leading-[1.6] text-neutral-400">
+                {/* <p className="not-prose mt-3 rounded-xl border border-dashed border-neutral-300 bg-white/60 px-4 py-3 text-[12.5px] italic leading-[1.6] text-neutral-400">
                   [Insert final Privacy Policy URL before publication.]
-                </p>
+                </p> */}
               </section>
 
               <section id="grievances">
@@ -872,10 +872,9 @@ export default function TermsPage() {
               </section>
 
               <section id="contact">
-                <h2 className="mb-2">18. Contact Information</h2>
+                <h2 className="mb-2">18. Contact Us</h2>
                 <p>
-                  For any questions, complaints or assistance relating to these
-                  Terms or BurgShake&rsquo;s services, please contact:
+                  For questions, privacy requests or complaints relating to this Privacy Policy, please contact:
                 </p>
 
                 <div className="not-prose my-5 rounded-2xl border border-neutral-200/70 bg-white p-5">
@@ -893,8 +892,7 @@ export default function TermsPage() {
                       <span className="font-semibold text-neutral-800">
                         Outlet Address:
                       </span>{" "}
-                      AG-34, Spectrum Mall, Phase 2, Sector 75, Noida, Uttar
-                      Pradesh, India
+                      AG-34, Spectrum Mall, Phase 2, Sector 75, Noida, Uttar Pradesh, India.
                     </div>
                     <div>
                       <span className="font-semibold text-neutral-800">
@@ -904,21 +902,15 @@ export default function TermsPage() {
                     </div>
                     <div>
                       <span className="font-semibold text-neutral-800">
-                        Email:
+                        Privacy Email:
                       </span>{" "}
                       info@kripa-ventures.com
                     </div>
                     <div>
                       <span className="font-semibold text-neutral-800">
-                        Website:
+                        Registered Office:
                       </span>{" "}
-                      www.burgshake.com
-                    </div>
-                    <div>
-                      <span className="font-semibold text-neutral-800">
-                        Grievance Officer:
-                      </span>{" "}
-                      [Insert appointed officer&rsquo;s name and designation]
+                      A-201 2nd Floor Tower A, Aims Golf Avenue 1, Sector 75, Noida
                     </div>
                   </div>
                 </div>
@@ -933,7 +925,7 @@ export default function TermsPage() {
                     </span>
                     <div className="min-w-0">
                       <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-neutral-400">
-                        Email
+                        Privacy Email
                       </div>
                       <div className="mt-0.5 truncate text-[13px] font-semibold text-neutral-800">
                         info@kripa-ventures.com
@@ -949,7 +941,7 @@ export default function TermsPage() {
                     </span>
                     <div className="min-w-0">
                       <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-neutral-400">
-                        Phone
+                        Customer Support
                       </div>
                       <div className="mt-0.5 text-[13px] font-semibold text-neutral-800">
                         +91 93184 83764
@@ -977,9 +969,7 @@ export default function TermsPage() {
                 </div>
 
                 <p className="mt-6 border-t border-neutral-200/70 pt-5 text-[13px] italic leading-[1.7] text-neutral-500">
-                  By accessing our website or placing an order, you acknowledge
-                  that you have read and understood these Terms &amp;
-                  Conditions.
+                  We will review privacy-related requests and complaints and respond in accordance with applicable laws.
                 </p>
               </section>
             </div>

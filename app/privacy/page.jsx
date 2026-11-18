@@ -11,12 +11,15 @@ import {
   Baby,
   Mail,
   RefreshCw,
+  Phone,
+  MapPin,
+  Store,
 } from "lucide-react";
 
 export const metadata = {
   title: "Privacy Policy — Burgshake",
   description:
-    "How Burgshake collects, uses, and protects your personal information.",
+    "How Burgshake (Kripa Ventures Pvt Ltd) collects, uses, and protects your personal information.",
 };
 
 const SECTIONS = [
@@ -33,7 +36,7 @@ const SECTIONS = [
 ];
 
 export default function PrivacyPage() {
-  const updated = "3 October 2026";
+  const updated = "17 November 2026";
 
   return (
     <main className="min-h-screen bg-[#FDFCFB] pt-24 sm:pt-28 lg:pt-32">
@@ -62,6 +65,8 @@ export default function PrivacyPage() {
         <p className="mt-4 max-w-2xl text-[14.5px] leading-[1.7] text-neutral-600">
           We collect only what we need to prepare and hand over your order.
           Here is exactly what we collect, why, and how you can control it.
+          This policy is published by Kripa Ventures Pvt Ltd, operating under
+          the brand BurgShake.
         </p>
         <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
           Last updated · {updated}
@@ -99,10 +104,13 @@ export default function PrivacyPage() {
               <section id="overview">
                 <h2 className="mb-2">1. Overview</h2>
                 <p>
-                  This Privacy Policy explains how Burgshake (&ldquo;we&rdquo;,{" "}
-                  &ldquo;us&rdquo;, &ldquo;our&rdquo;) collects, uses, stores,
-                  and protects your personal information when you use{" "}
-                  <strong>burgshake.com</strong> or place an order with us.
+                  This Privacy Policy explains how <strong>Kripa Ventures Pvt
+                  Ltd</strong>, operating under the brand name{" "}
+                  <strong>BurgShake</strong> (&ldquo;we&rdquo;, &ldquo;us&rdquo;,
+                  &ldquo;our&rdquo;), collects, uses, stores, and protects your
+                  personal information when you use{" "}
+                  <strong>www.burgshake.com</strong> or place an order with us
+                  through our website or other authorised ordering channels.
                 </p>
                 <p>
                   We comply with India&rsquo;s{" "}
@@ -130,6 +138,10 @@ export default function PrivacyPage() {
                   <li>
                     <strong>Email address</strong> — to send an order receipt
                     and follow up if we need to reach you
+                  </li>
+                  <li>
+                    <strong>Delivery address</strong> — where applicable, to
+                    fulfil home-delivery orders within designated service areas
                   </li>
                   <li>
                     <strong>Order details</strong> — items, customizations,
@@ -176,7 +188,7 @@ export default function PrivacyPage() {
               </section>
 
               <section id="use">
-                <h2 className="mb-2"> 3. How we use your information</h2>
+                <h2 className="mb-2">3. How we use your information</h2>
                 <p>Your information is used only for these purposes:</p>
                 <ul>
                   <li>
@@ -277,7 +289,7 @@ export default function PrivacyPage() {
                     {
                       name: "Razorpay Software Private Limited",
                       purpose:
-                        "Processes online payments when your order is ₹500 or above. Receives your name, email, phone, and order amount. Card details are entered directly with Razorpay and never stored by us.",
+                        "Processes online payments (UPI, cards, net banking, and supported digital wallets). Receives your name, email, phone, and order amount. Card details are entered directly with Razorpay and never stored by us.",
                     },
                     {
                       name: "Fast2SMS",
@@ -293,6 +305,11 @@ export default function PrivacyPage() {
                       name: "Cloud hosting provider",
                       purpose:
                         "Hosts our website and database. Your data is encrypted in transit and stored in a secure data centre.",
+                    },
+                    {
+                      name: "Third-party delivery partners",
+                      purpose:
+                        "Where home delivery is fulfilled through an authorised delivery partner, they receive your name, delivery address, phone number, and order details solely to complete the delivery.",
                     },
                   ].map((p) => (
                     <div
@@ -379,9 +396,7 @@ export default function PrivacyPage() {
 
               <section id="rights">
                 <h2 className="mb-2">8. Your rights</h2>
-                <p>
-                  Under the DPDP Act, you have the right to:
-                </p>
+                <p>Under the DPDP Act, you have the right to:</p>
                 <ul>
                   <li>
                     <strong>Access</strong> — request a copy of the personal
@@ -410,10 +425,12 @@ export default function PrivacyPage() {
                 </ul>
                 <p>
                   To exercise any of these, email{" "}
-                  <a href="mailto:privacy@burgshake.com">
-                    privacy@burgshake.com
-                  </a>
-                  . We will respond within <strong>30 days</strong>.
+                  <a href="mailto:info@kripa-ventures.com">
+                    info@kripa-ventures.com
+                  </a>{" "}
+                  or call{" "}
+                  <a href="tel:+919318483764">+91 93184 83764</a>. We will
+                  respond within <strong>30 days</strong>.
                 </p>
               </section>
 
@@ -429,13 +446,51 @@ export default function PrivacyPage() {
 
               <section id="contact">
                 <h2 className="mb-2">10. Contact us</h2>
-                <p>
-                  For any privacy question, request, or complaint:
-                </p>
+                <p>For any privacy question, request, or complaint:</p>
+
+                <div className="not-prose my-6 rounded-2xl border border-neutral-200/70 bg-white p-5">
+                  <div className="text-[13.5px] font-bold text-neutral-900">
+                    BurgShake — Kripa Ventures Pvt Ltd
+                  </div>
+                  <div className="mt-2 space-y-0.5 text-[13px] leading-[1.7] text-neutral-600">
+                    <div>
+                      <span className="font-semibold text-neutral-800">
+                        Legal Entity:
+                      </span>{" "}
+                      Kripa Ventures Pvt Ltd
+                    </div>
+                    <div>
+                      <span className="font-semibold text-neutral-800">
+                        CIN:
+                      </span>{" "}
+                      U56100UW2026PTC254861
+                    </div>
+                    <div>
+                      <span className="font-semibold text-neutral-800">
+                        GSTIN:
+                      </span>{" "}
+                      09AAMCK9863A1Z5
+                    </div>
+                    <div>
+                      <span className="font-semibold text-neutral-800">
+                        Registered Office:
+                      </span>{" "}
+                      A-201, 2nd Floor, Tower A, Aims Golf Avenue 1, Sector 75,
+                      Noida, Uttar Pradesh, India
+                    </div>
+                    <div>
+                      <span className="font-semibold text-neutral-800">
+                        Outlet Address:
+                      </span>{" "}
+                      AG-34, Spectrum Mall, Phase 2, Sector 75, Noida, Uttar
+                      Pradesh, India
+                    </div>
+                  </div>
+                </div>
 
                 <div className="not-prose my-6 grid gap-3 sm:grid-cols-2">
                   <a
-                    href="mailto:privacy@burgshake.com"
+                    href="mailto:info@kripa-ventures.com"
                     className="group flex items-center gap-3 rounded-2xl border border-neutral-200/70 bg-white p-4 transition-all hover:border-brand-300 hover:bg-brand-50/50"
                   >
                     <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand-600">
@@ -446,31 +501,71 @@ export default function PrivacyPage() {
                         Privacy requests
                       </div>
                       <div className="mt-0.5 truncate text-[13px] font-semibold text-neutral-800">
-                        privacy@burgshake.com
+                        info@kripa-ventures.com
                       </div>
                     </div>
                   </a>
 
-                  <div className="rounded-2xl border border-neutral-200/70 bg-white p-4">
-                    <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-neutral-400">
-                      Data Protection Officer
+                  <a
+                    href="tel:+919318483764"
+                    className="group flex items-center gap-3 rounded-2xl border border-neutral-200/70 bg-white p-4 transition-all hover:border-brand-300 hover:bg-brand-50/50"
+                  >
+                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand-600">
+                      <Phone className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+                        Customer Support
+                      </div>
+                      <div className="mt-0.5 text-[13px] font-semibold text-neutral-800">
+                        +91 93184 83764
+                      </div>
                     </div>
-                    <div className="mt-1.5 text-[13px] leading-[1.55] text-neutral-700">
-                      Burgshake
-                      <br />
-                      12 Linking Road, Bandra West
-                      <br />
-                      Mumbai 400050, India
+                  </a>
+
+                  <a
+                    href="https://maps.google.com/?q=Spectrum+Mall+Sector+75+Noida"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-3 rounded-2xl border border-neutral-200/70 bg-white p-4 transition-all hover:border-brand-300 hover:bg-brand-50/50 sm:col-span-2"
+                  >
+                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-50 text-brand-600">
+                      <MapPin className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+                        Outlet
+                      </div>
+                      <div className="mt-0.5 truncate text-[13px] font-semibold text-neutral-800">
+                        AG-34, Spectrum Mall, Phase 2, Sector 75, Noida
+                      </div>
                     </div>
-                  </div>
+                  </a>
                 </div>
+
+                <p className="mt-3 text-[13px] leading-[1.7] text-neutral-600">
+                  <strong>Data Protection Officer:</strong> The grievance
+                  officer for privacy matters can be reached at the email or
+                  phone number above. Privacy requests and complaints will be
+                  acknowledged within <strong>48 hours</strong> and resolved
+                  within <strong>one month</strong>, in accordance with
+                  applicable law.
+                </p>
+
+                <h3>Jurisdiction</h3>
+                <p>
+                  This Privacy Policy is governed by the laws of India.
+                  Subject to applicable law, courts having competent
+                  territorial jurisdiction over{" "}
+                  <strong>Gautam Buddha Nagar, Uttar Pradesh</strong> shall
+                  have jurisdiction over disputes arising from this policy.
+                </p>
 
                 <h3>Changes to this policy</h3>
                 <p>
                   If we make material changes to how we handle your data, we
                   will notify you by email (if you have an account) and update
-                  the &ldquo;Last updated&rdquo; date at the top of this
-                  page.
+                  the &ldquo;Last updated&rdquo; date at the top of this page.
                 </p>
               </section>
             </div>

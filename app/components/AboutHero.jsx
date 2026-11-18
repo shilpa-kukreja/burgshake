@@ -5,7 +5,7 @@ export default function AboutHero() {
     <section className="relative mt-0 w-full overflow-hidden sm:mt-26">
       {/* Background image determines section height */}
       <img
-        src="/about/banner.jpg"
+        src="/about/banner.jpeg"
         alt="Burgshake café"
         className="block h-auto w-full"
         loading="eager"

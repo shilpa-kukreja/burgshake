@@ -18,7 +18,7 @@ export default function AboutStory() {
               {/* Big image */}
               <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-neutral-100 shadow-[0_30px_70px_-25px_rgba(249,115,22,0.35)]">
                 <img
-                  src="/aboutpage/about.png"
+                  src="/aboutpage/about.jpeg"
                   alt="Smashing fresh patties"
                   className="h-full w-full object-cover"
                   loading="lazy"
