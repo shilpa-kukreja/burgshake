@@ -84,7 +84,7 @@ export default function IntroSection() {
       <div className="fixed inset-0 -z-10">
         <div className="relative h-full w-full">
           <img
-            src="/about/background.png"
+            src="/about/background.jpeg"
             alt="Burgers & Shakes"
             className="h-full w-full object-cover"
             loading="eager"
