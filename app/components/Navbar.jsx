@@ -98,11 +98,11 @@ export default function Navbar() {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Phone (XL only) */}
           <a
-            href="tel:+919876543210"
+            href="tel:+919318483764"
             className="hidden items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-xs font-bold text-neutral-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 xl:flex"
           >
             <Phone className="h-3.5 w-3.5" />
-            +91 98765 43210
+            +91 9318483764
           </a>
 
           {/* Wishlist */}
