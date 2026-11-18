@@ -16,7 +16,7 @@ export default function Home() {
       <FeaturedMenu/>
       <WhyChooseUs/>
       {/* <VideoSection/> */}
-      <Testimonials/>
+      {/* <Testimonials/> */}
       <Blogs/>
       <FinalCTA/>
       <Subscribe/>
