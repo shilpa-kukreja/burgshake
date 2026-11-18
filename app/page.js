@@ -15,7 +15,7 @@ export default function Home() {
       <IntroSection/>
       <FeaturedMenu/>
       <WhyChooseUs/>
-      <VideoSection/>
+      {/* <VideoSection/> */}
       <Testimonials/>
       <Blogs/>
       <FinalCTA/>

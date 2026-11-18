@@ -73,7 +73,13 @@ export default function Hero() {
 
             {/* Subtext */}
             <p className="mt-6 max-w-[40rem] text-[15px] leading-[1.65] text-neutral-500">
-             Craving something delicious? BurgShake brings your favourite comfort foods together with mouth-watering burgers, creamy shakes, and golden, crispy French fries. Whether it’s a quick bite, a meal with friends, or a treat-yourself moment, make every craving count with flavours worth coming back for.
+             Welcome to BurgShake, where serious cravings meet bold flavours! From freshly smashed burgers and indulgent thick shakes to loaded fries packed with flavour, we've got everything you need to make your cravings count.
+             Freshly prepared, generously loaded and always worth coming back for.
+
+            </p>
+
+            <p className="mt-6 max-w-[40rem] text-[18px] leading-[1.65] text-neutral-700 font-medium">
+              Come hungry. Leave happy.
             </p>
 
             {/* CTAs */}
@@ -99,7 +105,7 @@ export default function Hero() {
             </div>
 
             {/* Trust row (avatars + rating) */}
-            <div className="mt-9 flex items-center gap-4">
+            {/* <div className="mt-9 flex items-center gap-4">
               <div className="flex -space-x-2.5">
                 {AVATARS.map((src, i) => (
                   <img
@@ -127,7 +133,7 @@ export default function Hero() {
                   Loved by 500+ customers
                 </span>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* ── RIGHT: Visual ────────────────────────────── */}

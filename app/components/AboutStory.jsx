@@ -60,24 +60,34 @@ export default function AboutStory() {
 
             <div className="mt-6 space-y-4 text-[14.5px] leading-[1.8] text-neutral-600">
               <p>
-                BurgShake was born from a simple love for great food and the
-                belief that every craving deserves something delicious. From
-                juicy, flavour-packed burgers to creamy shakes and crispy golden
-                fries, our focus has always been on bringing satisfying flavours
-                together.
+                At BurgShake, we believe great food should be exciting,
+                satisfying and always worth craving.
               </p>
 
               <p>
-                Every item on our menu is inspired by the joy of good food, bold
-                flavours, and those little moments that make a meal memorable.
-                We believe great taste doesn't need to be complicated—it just
-                needs the right ingredients and a passion for serving something
-                special.
+                What started with a love for burgers has grown into a bigger
+                obsession with bold flavours, indulgent combinations and
+                unforgettable food experiences.
               </p>
 
               <p>
-                Today, BurgShake continues to bring burger lovers and shake
-                enthusiasts together, one delicious bite and sip at a time.
+                From freshly smashed burgers with crispy edges to thick, creamy
+                shakes and generously loaded fries, everything we create is
+                designed to make your cravings count.
+              </p>
+
+              <p>
+                We're here for the burger lovers, the shake enthusiasts and
+                everyone who believes that good food makes every moment better.
+              </p>
+              <p>
+                No ordinary bites. Just serious cravings.
+              </p>
+              <p>
+                Welcome to BurgShake.
+              </p>
+              <p>
+                Bite. Sip. Repeat.
               </p>
             </div>
 
@@ -96,13 +106,21 @@ export default function AboutStory() {
               </div>
               <div className="leading-tight">
                 <div className="text-[12.5px] font-bold text-neutral-900">
-                  Karan &amp; Dev
+                  Krati &amp; Paurush
                 </div>
                 <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
                   Founders · Burgshake
                 </div>
               </div>
             </div>
+
+            {/* Founders' message */}
+            <blockquote className="mt-6 border-l-2 border-brand-500/70 pl-5 text-[13.5px] italic leading-[1.8] text-neutral-500">
+              &ldquo;We wanted to create a place where great burgers, indulgent
+              shakes and good times come together. BurgShake is our take on
+              comfort food, made with passion and served with a whole lot of
+              flavour.&rdquo;
+            </blockquote>
           </div>
         </div>
       </div>

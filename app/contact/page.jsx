@@ -17,7 +17,7 @@ export default function ContactPage() {
       <ContactHero />
       <ContactForm />
       <ContactMap />
-      <ContactHours />
+      {/* <ContactHours /> */}
       <ContactSocials />
       
     </main>

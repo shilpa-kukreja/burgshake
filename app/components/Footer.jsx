@@ -58,9 +58,9 @@ function TwitterIcon({ className = "h-4 w-4" }) {
 
 /* ─── Static groups ────────────────────────────────── */
 const SOCIALS = [
-  { Icon: InstagramIcon, href: "https://instagram.com", label: "Instagram" },
+  { Icon: InstagramIcon, href: "@burgshakeofficial", label: "Instagram" },
   { Icon: FacebookIcon, href: "https://facebook.com", label: "Facebook" },
-  { Icon: TwitterIcon, href: "https://twitter.com", label: "Twitter" },
+  // { Icon: TwitterIcon, href: "https://twitter.com", label: "Twitter" },
 ];
 
 const EXPLORE_LINKS = [
@@ -240,18 +240,18 @@ export default function Footer() {
               <li className="flex items-start gap-2.5">
                 <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-500" />
                 <span className="text-[13px] leading-[1.55] text-neutral-600">
-                  12 Linking Road,
-                  <br />
-                  Bandra West, Mumbai
+                  AG-34, Spectrum Mall Phase-2, Sector-75, Noida
+                  {/* <br />
+                  Bandra West, Mumbai */}
                 </span>
               </li>
               <li>
                 <a
-                  href="tel:+919876543210"
+                  href="tel:+919318483764"
                   className="flex items-center gap-2.5 text-[13px] font-medium text-neutral-700 transition-colors hover:text-brand-600"
                 >
                   <Phone className="h-3.5 w-3.5 shrink-0 text-brand-500" />
-                  +91 98765 43210
+                  +91 9318483764
                 </a>
               </li>
               <li>
@@ -280,7 +280,8 @@ export default function Footer() {
       <div className="relative mx-auto mt-8 max-w-7xl border-t border-neutral-200/70 px-6 py-6 lg:px-10">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-[12px] font-medium text-neutral-500">
-            © {new Date().getFullYear()} BurgShake. Made for burger lovers and shake enthusiasts.
+            © {new Date().getFullYear()} BurgShake. Made for burger lovers and
+            shake enthusiasts.
           </p>
 
           <div className="flex items-center gap-5 text-[12px] font-medium text-neutral-500">

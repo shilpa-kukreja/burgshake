@@ -46,14 +46,14 @@ const SOCIALS = [
     Icon: FacebookIcon,
     accent: "from-blue-500 to-blue-600",
   },
-  {
-    name: "Twitter / X",
-    handle: "@burgshake",
-    desc: "Quick updates, sold-out alerts, and the occasional joke.",
-    href: "https://twitter.com",
-    Icon: TwitterIcon,
-    accent: "from-neutral-800 to-neutral-950",
-  },
+  // {
+  //   name: "Twitter / X",
+  //   handle: "@burgshake",
+  //   desc: "Quick updates, sold-out alerts, and the occasional joke.",
+  //   href: "https://twitter.com",
+  //   Icon: TwitterIcon,
+  //   accent: "from-neutral-800 to-neutral-950",
+  // },
 ];
 
 export default function ContactSocials() {

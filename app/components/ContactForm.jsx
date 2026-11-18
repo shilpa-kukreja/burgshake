@@ -13,6 +13,7 @@ import {
   MapPin,
   Clock,
   AlertCircle,
+  Building2,
 } from "lucide-react";
 
 const TOPICS = [
@@ -162,17 +163,39 @@ export default function ContactForm() {
                     Visit Us
                   </div>
                   <div className="mt-1 font-display text-[15px] font-bold leading-snug tracking-[-0.01em] text-neutral-950">
-                    12 Linking Road
+                    AG-34, Spectrum Mall
                   </div>
                   <div className="mt-0.5 text-[12.5px] leading-[1.55] text-neutral-500">
-                    Bandra West, Mumbai 400050
+                    Phase 2, Sector 75, Noida
+                    <br />
+                    Uttar Pradesh, India
+                  </div>
+                </div>
+              </div>
+
+              {/* Registered Office */}
+              <div className="group flex items-start gap-4 rounded-2xl border border-neutral-200/70 bg-white p-5 transition-all duration-300 hover:border-brand-100 hover:shadow-[0_16px_36px_-20px_rgba(249,115,22,0.3)]">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-50 ring-1 ring-brand-100 transition-all duration-300 group-hover:bg-brand-500 group-hover:ring-brand-500">
+                  <Building2 className="h-4.5 w-4.5 text-brand-600 transition-colors duration-300 group-hover:text-white" strokeWidth={2.2} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-neutral-400">
+                    Registered Office
+                  </div>
+                  <div className="mt-1 font-display text-[15px] font-bold leading-snug tracking-[-0.01em] text-neutral-950">
+                    A-201, 2nd Floor, Tower A
+                  </div>
+                  <div className="mt-0.5 text-[12.5px] leading-[1.55] text-neutral-500">
+                    Aims Golf Avenue 1, Sector 75
+                    <br />
+                    Noida, Uttar Pradesh
                   </div>
                 </div>
               </div>
 
               {/* Phone */}
               <a
-                href="tel:+919876543210"
+                href="tel:+919318483764"
                 className="group flex items-start gap-4 rounded-2xl border border-neutral-200/70 bg-white p-5 transition-all duration-300 hover:border-brand-100 hover:shadow-[0_16px_36px_-20px_rgba(249,115,22,0.3)]"
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-50 ring-1 ring-brand-100 transition-all duration-300 group-hover:bg-brand-500 group-hover:ring-brand-500">
@@ -183,17 +206,17 @@ export default function ContactForm() {
                     Call Us
                   </div>
                   <div className="mt-1 font-display text-[15px] font-bold leading-snug tracking-[-0.01em] text-neutral-950">
-                    +91 98765 43210
+                    +91 93184 83764
                   </div>
                   <div className="mt-0.5 text-[12.5px] leading-[1.55] text-neutral-500">
-                    Mon–Sun · 11 AM – 11 PM
+                    Customer Support · Mon–Sun · 11 AM – 11 PM
                   </div>
                 </div>
               </a>
 
               {/* Email */}
               <a
-                href="mailto:hello@burgshake.com"
+                href="mailto:info@kripa-ventures.com"
                 className="group flex items-start gap-4 rounded-2xl border border-neutral-200/70 bg-white p-5 transition-all duration-300 hover:border-brand-100 hover:shadow-[0_16px_36px_-20px_rgba(249,115,22,0.3)]"
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-50 ring-1 ring-brand-100 transition-all duration-300 group-hover:bg-brand-500 group-hover:ring-brand-500">
@@ -204,7 +227,7 @@ export default function ContactForm() {
                     Email Us
                   </div>
                   <div className="mt-1 font-display text-[15px] font-bold leading-snug tracking-[-0.01em] text-neutral-950">
-                    hello@burgshake.com
+                    info@kripa-ventures.com
                   </div>
                   <div className="mt-0.5 text-[12.5px] leading-[1.55] text-neutral-500">
                     Replies within a few hours
@@ -213,7 +236,7 @@ export default function ContactForm() {
               </a>
 
               {/* Hours */}
-              <div className="group flex items-start gap-4 rounded-2xl border border-neutral-200/70 bg-white p-5 transition-all duration-300 hover:border-brand-100 hover:shadow-[0_16px_36px_-20px_rgba(249,115,22,0.3)]">
+              {/* <div className="group flex items-start gap-4 rounded-2xl border border-neutral-200/70 bg-white p-5 transition-all duration-300 hover:border-brand-100 hover:shadow-[0_16px_36px_-20px_rgba(249,115,22,0.3)]">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-50 ring-1 ring-brand-100 transition-all duration-300 group-hover:bg-brand-500 group-hover:ring-brand-500">
                   <Clock className="h-4.5 w-4.5 text-brand-600 transition-colors duration-300 group-hover:text-white" strokeWidth={2.2} />
                 </span>
@@ -228,7 +251,7 @@ export default function ContactForm() {
                     Last order at 10:30 PM
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 

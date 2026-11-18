@@ -113,12 +113,11 @@ export default function AboutExperience() {
           />
           <blockquote className="mt-6">
             <p className="font-serif text-[1.25rem] italic leading-[1.5] tracking-[-0.005em] text-neutral-900 sm:text-[1.5rem] sm:leading-[1.45]">
-              We believe great food does more than satisfy a craving — it brings
-              people together, one delicious bite at a time.
+              Made with passion. Served with flavour. Remembered with every bite.
             </p>
           </blockquote>
           <figcaption className="mt-6 text-[10.5px] font-bold uppercase tracking-[0.18em] text-neutral-400">
-            — Karan Bhatia, Head Chef
+            	Paurush Gaur, Co founder
           </figcaption>
         </figure>
       </div>

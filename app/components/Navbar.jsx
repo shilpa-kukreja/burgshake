@@ -64,8 +64,8 @@ export default function Navbar() {
         }`}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-[11px] font-semibold tracking-wide sm:text-xs">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span>Takeaway Only · Freshly Made · Ready in 15 mins</span>
+          {/* <MapPin className="h-3.5 w-3.5 shrink-0" /> */}
+          <span>FRESHLY SMASHED · THICK SHAKES · LOADED FRIES</span>
         </div>
       </div>
 
